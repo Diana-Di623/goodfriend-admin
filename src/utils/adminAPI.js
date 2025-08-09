@@ -106,17 +106,22 @@ export const adminAPI = {
     })
   },
 
-  // 创建咨询师
+  // 创建咨询师 - 只需要 phone 和 name 两个参数
   createCounselor(counselorData) {
     console.log('=== 创建咨询师 ===')
-    console.log('咨询师数据:', {
-      ...counselorData,
-      password: '***hidden***'
-    })
+    console.log('原始咨询师数据:', counselorData)
+    
+    // 只提取 phone 和 name 两个必需参数
+    const submitData = {
+      phone: counselorData.phone,
+      name: counselorData.name
+    }
+    
+    console.log('提交的咨询师数据:', submitData)
     
     return request('/api/admin/consultant/create', {
       method: 'POST',
-      data: counselorData
+      data: submitData
     }).then(response => {
       console.log('=== 创建咨询师响应 ===')
       console.log('响应数据:', response)
@@ -127,6 +132,7 @@ export const adminAPI = {
       throw error
     })
   },
+
 
   // 获取咨询师详情
   getCounselorDetail(counselorId) {
@@ -271,14 +277,15 @@ export const adminAPI = {
       console.log('响应类型:', typeof response)
       console.log('响应是否为对象:', typeof response === 'object')
       
-      // 适配后端返回格式：{ "username": "admin", "password": "super" }
-      if (response && typeof response === 'object') {
-        console.log('检测到有效的管理员响应')
+      // 适配后端返回格式：{ "token": "eyJhbGciOiJIUzUxMiJ9..." }
+      if (response && response.token) {
+        console.log('检测到有效的token响应')
+        console.log('Token:', response.token)
         return response
       }
       
-      console.error('无效的管理员登录响应')
-      throw new Error('服务器返回无效响应')
+      console.error('无效的管理员登录响应 - 缺少token')
+      throw new Error('登录响应格式错误：缺少token')
     }).catch(error => {
       console.error('=== 管理员登录请求失败 ===')
       console.error('错误详情:', error)
@@ -399,6 +406,57 @@ export const adminAPI = {
     
     return request(`/api/admin/activities/recent?limit=${limit}`, {
       method: 'GET'
+    })
+  },
+
+  // 上传静态文件
+  uploadStaticFile(formData) {
+    console.log('=== 上传静态文件 ===')
+    console.log('上传数据:', formData)
+    
+    // 获取认证token
+    const token = localStorage.getItem('adminToken')
+    
+    // 使用原生 fetch 处理文件上传，不设置 Content-Type (让浏览器自动设置)
+    const headers = {}
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+    
+    return fetch('/api/static', {
+      method: 'POST',
+      headers: headers,
+      body: formData
+    })
+    .then(response => {
+      console.log(`=== 文件上传响应状态 ===`)
+      console.log(`状态码: ${response.status}`)
+      console.log(`状态文本: ${response.statusText}`)
+      
+      if (!response.ok) {
+        const error = new Error(`HTTP ${response.status}: ${response.statusText}`)
+        error.statusCode = response.status
+        error.networkError = true
+        throw error
+      }
+      
+      // 根据响应内容类型决定如何解析
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        return response.json()
+      } else {
+        return response.text()
+      }
+    })
+    .then(data => {
+      console.log(`=== 文件上传响应数据 ===`)
+      console.log(data)
+      return data
+    })
+    .catch(error => {
+      console.error(`=== 文件上传失败 ===`)
+      console.error(`错误信息:`, error.message)
+      throw error
     })
   }
 }

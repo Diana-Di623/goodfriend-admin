@@ -101,8 +101,8 @@ const router = useRouter()
 
 // 登录表单数据
 const loginForm = ref({
-  username: '',
-  password: ''
+  username: 'admin',
+  password: 'super'
 })
 
 const isLoading = ref(false)
@@ -136,28 +136,8 @@ async function handleLogin() {
       userAgent: navigator.userAgent
     })
     
-    // 检查是否为测试账号（临时方案）
-    if (loginData.username === 'admin' && loginData.password === 'super') {
-      console.log('🔧 使用测试账号登录')
-      
-      // 模拟成功登录
-      const adminToken = 'admin_token_' + Date.now()
-      localStorage.setItem('adminToken', adminToken)
-      
-      console.log('✅ 测试账号登录成功:', {
-        token: adminToken,
-        loginTime: new Date().toISOString()
-      })
-      
-      // 直接跳转到管理后台
-      router.push('/admin/dashboard')
-      
-      isLoading.value = false
-      return
-    }
-    
     console.log('🌐 调用真实API登录接口...')
-    console.log('📡 请求URL: /admin/login')
+    console.log('📡 请求URL: /api/admin/login')
     console.log('📋 请求方法: POST')
     console.log('📦 请求体:', JSON.stringify(loginData, null, 2))
     
@@ -167,22 +147,63 @@ async function handleLogin() {
     console.log('📥 API响应原始数据:', response)
     console.log('📊 响应状态检查:', {
       responseType: typeof response,
-      responseKeys: Object.keys(response || {})
+      responseKeys: Object.keys(response || {}),
+      responseConstructor: response ? response.constructor.name : 'N/A',
+      isObject: typeof response === 'object',
+      isArray: Array.isArray(response),
+      isNull: response === null,
+      isUndefined: response === undefined,
+      responseString: JSON.stringify(response),
+      responseLength: response ? Object.keys(response).length : 0
     })
     
     console.log('管理员登录响应:', response)
     
-    // 检查响应是否包含管理员信息（适配新的响应格式）
-    if (response && (response.username || response.success)) {
+    // 详细检查响应中的token
+    console.log('🔍 Token检查:', {
+      hasTokenProperty: 'token' in (response || {}),
+      tokenValue: response?.token,
+      tokenType: typeof response?.token,
+      tokenLength: response?.token ? response.token.length : 'N/A',
+      allResponseKeys: response ? Object.keys(response) : [],
+      responseValues: response ? Object.values(response) : []
+    })
+    
+    // 检查响应是否包含token（适配真实API响应格式）
+    if (response && response.token) {
       console.log('✅ 登录验证成功')
       
-      // 生成管理员token（由于后端只返回用户信息，前端生成token）
-      const adminToken = 'admin_token_' + Date.now() + '_' + response.username
+      // 使用后端返回的真实token
+      const adminToken = response.token
+      console.log('🔑 [TOKEN] 后端返回的token:', adminToken)
+      console.log('🔑 [TOKEN] token类型:', typeof adminToken)
+      console.log('🔑 [TOKEN] token长度:', adminToken ? adminToken.length : 'N/A')
+      
+      // 检查 localStorage 是否可用
+      console.log('💾 [TOKEN] localStorage是否可用:', typeof(Storage) !== "undefined")
+      
+      // 清除旧的 token（如果存在）
+      console.log('🧹 [TOKEN] 清除旧token...')
+      localStorage.removeItem('adminToken')
+      console.log('🔍 [TOKEN] 清除后验证:', localStorage.getItem('adminToken'))
+      
+      // 存储新的 token
       localStorage.setItem('adminToken', adminToken)
+      console.log('💾 [TOKEN] token已保存到localStorage')
+      
+      // 立即验证存储结果
+      const storedToken = localStorage.getItem('adminToken')
+      console.log('🔍 [TOKEN] localStorage验证:', storedToken)
+      console.log('🔍 [TOKEN] 存储是否成功:', storedToken === adminToken)
+      
+      // 测试多次读取
+      setTimeout(() => {
+        console.log('⏰ [TOKEN] 延迟检查localStorage:', localStorage.getItem('adminToken'))
+      }, 100)
       
       // 保存管理员用户信息
       const adminInfo = {
-        username: response.username || loginData.username,
+        username: loginData.username, // 使用登录时的用户名
         loginTime: new Date().toISOString(),
         tokenType: 'admin'
       }
@@ -197,22 +218,16 @@ async function handleLogin() {
         }
       })
       
-      // 显示成功提示
-      alert('登录成功！\n\n正在跳转到管理后台...')
-      
       console.log('🔀 准备跳转到管理后台...')
       
-      // 跳转到管理后台
-      setTimeout(() => {
-        console.log('🚀 执行路由跳转: /admin/dashboard')
-        router.push('/admin/dashboard')
-      }, 1500)
+      // 直接跳转到管理后台，无需提示和延迟
+      console.log('🚀 执行路由跳转: /admin/dashboard')
+      router.push('/admin/dashboard')
     } else {
       console.log('❌ 登录验证失败 - 响应格式不正确')
       console.log('🔍 响应分析:', {
         response: response,
-        hasUsername: !!response?.username,
-        hasSuccess: !!response?.success,
+        hasToken: !!response?.token,
         responseType: typeof response,
         isNull: response === null,
         isUndefined: response === undefined
@@ -236,12 +251,29 @@ async function handleLogin() {
       timestamp: new Date().toISOString()
     })
     
+    // 详细分析错误对象的所有属性
+    console.log('🔍 错误对象完整分析:', {
+      errorType: typeof error,
+      errorConstructor: error.constructor.name,
+      errorKeys: Object.keys(error),
+      errorValues: Object.getOwnPropertyNames(error),
+      isErrorInstance: error instanceof Error,
+      hasMessage: 'message' in error,
+      hasStatusCode: 'statusCode' in error,
+      hasData: 'data' in error,
+      toString: error.toString(),
+      valueOf: error.valueOf()
+    })
+    
     console.log('🔍 错误分析:', {
       isNetworkError: error.message && error.message.includes('fetch'),
       isUnauthorized: error.statusCode === 401,
       isForbidden: error.statusCode === 403,
       hasErrorData: !!error.data,
-      hasErrorMessage: !!error.data?.message
+      hasErrorMessage: !!error.data?.message,
+      errorMessage: error.message,
+      errorName: error.name,
+      errorString: String(error)
     })
     
     let errorMessage = '登录失败'
@@ -257,22 +289,15 @@ async function handleLogin() {
       errorMessage = '账户已被禁用'
     } else if (error.data && error.data.message) {
       errorMessage = error.data.message
-      showTestHint = true
-    } else {
-      showTestHint = true
     }
     
-    const content = showTestHint 
-      ? `${errorMessage}\n\n💡 提示：如果后端服务未启动，您可以使用测试账号：\n用户名：admin\n密码：super`
-      : errorMessage
-    
-    alert(`登录失败\n\n${content}`)
+    alert(`登录失败\n\n${errorMessage}`)
   }
 }
 
 // 显示帮助
 function showHelp() {
-  alert('使用帮助\n\n请使用管理员账号和密码登录。\n\n测试账号：\n用户名：admin\n密码：super\n\n如果忘记密码，请联系系统管理员。')
+  alert('使用帮助\n\n请使用管理员账号和密码登录。\n\n如果忘记密码，请联系系统管理员。')
 }
 
 // 联系技术支持
@@ -282,17 +307,32 @@ function contactSupport() {
 
 // 页面加载时初始化
 onMounted(() => {
-  // 检查是否已经有有效的token，直接跳转到后台
+  // 详细检查localStorage中的token
+  console.log('🔍 [TOKEN] 页面加载 - 检查localStorage状态')
+  console.log('🔍 [TOKEN] localStorage是否可用:', typeof(Storage) !== "undefined")
+  
   const adminToken = localStorage.getItem('adminToken')
+  console.log('🔍 [TOKEN] 页面加载时获取的token:', adminToken)
+  console.log('🔍 [TOKEN] token类型:', typeof adminToken)
+  console.log('🔍 [TOKEN] token是否存在:', !!adminToken)
+  
+  // 检查localStorage中的所有键
+  console.log('🔍 [TOKEN] localStorage所有键:', Object.keys(localStorage))
+  console.log('🔍 [TOKEN] localStorage长度:', localStorage.length)
   
   if (adminToken) {
+    console.log('✅ [TOKEN] 发现存储的token，准备跳转')
     const result = confirm('检测到已登录\n\n检测到您已登录管理后台，是否直接进入？')
     if (result) {
       router.push('/admin/dashboard')
     } else {
+      console.log('🧹 [TOKEN] 用户选择清除token')
       localStorage.removeItem('adminToken')
       localStorage.removeItem('adminInfo')
+      console.log('🔍 [TOKEN] 清除后验证:', localStorage.getItem('adminToken'))
     }
+  } else {
+    console.log('❌ [TOKEN] 未发现存储的token')
   }
   
   // 添加键盘事件监听

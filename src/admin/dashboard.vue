@@ -49,67 +49,34 @@
       </div>
     </div>
 
-    <!-- 快速操作区域 -->
-    <div class="quick-actions-section">
-      <div class="section-header">
-        <span class="section-title">快速操作</span>
-      </div>
-      <div class="actions-grid">
-        <div class="action-card" @click="navigateToApplications">
-          <div class="action-icon">📋</div>
-          <span class="action-title">审核申请</span>
-          <span class="action-desc">处理咨询师申请</span>
-          <div v-if="stats.pendingApplications > 0" class="action-badge">{{ stats.pendingApplications }}</div>
-        </div>
-
-        <div class="action-card" @click="navigateToCounselors">
-          <div class="action-icon">👨‍⚕️</div>
-          <span class="action-title">咨询师管理</span>
-          <span class="action-desc">管理咨询师信息</span>
-        </div>
-
-        <div class="action-card" @click="navigateToUsers">
-          <div class="action-icon">👥</div>
-          <span class="action-title">用户管理</span>
-          <span class="action-desc">查看用户信息</span>
-        </div>
-
-        <div class="action-card" @click="navigateToReports">
-          <div class="action-icon">📊</div>
-          <span class="action-title">数据报告</span>
-          <span class="action-desc">查看统计数据</span>
-        </div>
-      </div>
-    </div>
-
     <!-- 最近活动区域 -->
     <div class="recent-activities-section">
       <div class="section-header">
         <span class="section-title">最近活动</span>
         <div class="refresh-btn" @click="loadDashboardData">
           <span class="refresh-icon">🔄</span>
-        </div>
-      </div>
-      <div class="activities-list">
-        <div 
-          v-for="activity in recentActivities"
-          :key="activity.id"
-          class="activity-item"
-        >
-          <div class="activity-avatar">
-            <span class="activity-icon">{{ activity.icon }}</span>
-          </div>
-          <div class="activity-content">
-            <span class="activity-title">{{ activity.title }}</span>
-            <span class="activity-desc">{{ activity.description }}</span>
-            <span class="activity-time">{{ formatTime(activity.time) }}</span>
-          </div>
-          <div v-if="activity.status" class="activity-status" :class="activity.status">
-            <span class="status-text">{{ getStatusText(activity.status) }}</span>
           </div>
         </div>
+        <div class="activities-list">
+          <div 
+            v-for="activity in recentActivities"
+            :key="activity.id"
+            class="activity-item"
+          >
+            <div class="activity-avatar">
+              <span class="activity-icon">{{ activity.icon }}</span>
+            </div>
+            <div class="activity-content">
+              <span class="activity-title">{{ activity.title }}</span>
+              <span class="activity-desc">{{ activity.description }}</span>
+              <span class="activity-time">{{ formatTime(activity.time) }}</span>
+            </div>
+            <div v-if="activity.status" class="activity-status" :class="activity.status">
+              <span class="status-text">{{ getStatusText(activity.status) }}</span>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
 
     <!-- 系统状态区域 -->
     <div class="system-status-section">
@@ -147,7 +114,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { adminAPI } from '../utils/adminAPI.js'
+
+// 路由
+const router = useRouter()
 
 // 定义事件触发器
 const emit = defineEmits(['switchModule'])
@@ -276,12 +247,12 @@ async function loadDashboardData() {
 
 // 导航到不同模块
 function navigateToApplications() {
-  // 触发父组件切换到申请管理模块
-  emit('switchModule', 'applications')
+  // 跳转到咨询师申请管理页面
+  router.push('/admin/counselors')
 }
 
 function navigateToCounselors() {
-  emit('switchModule', 'counselors')
+  router.push('/admin/counselors')
 }
 
 function navigateToUsers() {
@@ -333,76 +304,6 @@ function getStatusText(status) {
   padding: 24px;
   background: #f5f7fa;
   min-height: 100vh;
-  width: 100%;
-  max-width: none;
-}
-
-/* Dashboard 头部样式 */
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 20px 0;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-}
-
-.page-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0 0 4px 0;
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 0;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
-}
-
-.logout-btn:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
-  transform: translateY(-1px);
-}
-
-.logout-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
-}
-
-.logout-icon {
-  font-size: 16px;
-}
-
-.logout-text {
-  font-size: 14px;
 }
 
 /* 统计卡片区域 */
@@ -423,50 +324,58 @@ function getStatusText(status) {
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 .stat-icon {
   width: 50px;
   height: 50px;
-  border-radius: 50%;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  margin-bottom: 16px;
-}
-
-.stat-icon.applications {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-icon.counselors {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.stat-icon.users {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.stat-icon.consultations {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.stat-content {
+  font-size: 24px;
   margin-bottom: 12px;
 }
 
+.stat-icon.applications {
+  background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+}
+
+.stat-icon.counselors {
+  background: linear-gradient(135deg, #dbeafe 0%, #3b82f6 100%);
+}
+
+.stat-icon.users {
+  background: linear-gradient(135deg, #d1fae5 0%, #10b981 100%);
+}
+
+.stat-icon.consultations {
+  background: linear-gradient(135deg, #e0e7ff 0%, #8b5cf6 100%);
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .stat-number {
-  display: block;
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 4px;
+  color: #1f2937;
+  line-height: 1;
 }
 
 .stat-label {
   font-size: 14px;
-  color: #666;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .stat-trend {
@@ -475,99 +384,36 @@ function getStatusText(status) {
   right: 16px;
   padding: 4px 8px;
   border-radius: 6px;
-  background: #e74c3c;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .stat-trend.positive {
-  background: #27ae60;
+  background: #dcfce7;
+  color: #16a34a;
 }
 
-.trend-text {
-  font-size: 11px;
-  color: #fff;
-  font-weight: 600;
-}
-
-/* 快速操作区域 */
-.quick-actions-section {
-  margin-bottom: 24px;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.section-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
+/* 区域标题样式 */
 .refresh-btn {
-  padding: 8px;
-  cursor: pointer;
-}
-
-.refresh-icon {
-  font-size: 18px;
-  color: #409eff;
-}
-
-.actions-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.action-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  cursor: pointer;
-  transition: transform 0.2s;
-  position: relative;
-}
-
-.action-card:active {
-  transform: scale(0.98);
-}
-
-.action-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
-}
-
-.action-title {
-  display: block;
-  font-size: 16px;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 8px;
-}
-
-.action-desc {
-  font-size: 13px;
-  color: #666;
-}
-
-.action-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  min-width: 20px;
-  height: 20px;
-  background: #e74c3c;
-  color: #fff;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background: #e5e7eb;
+}
+
+.refresh-icon {
+  font-size: 14px;
 }
 
 /* 最近活动区域 */
@@ -585,9 +431,13 @@ function getStatusText(status) {
 .activity-item {
   display: flex;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-  position: relative;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.3s ease;
+}
+
+.activity-item:hover {
+  background: #f9fafb;
 }
 
 .activity-item:last-child {
@@ -597,16 +447,17 @@ function getStatusText(status) {
 .activity-avatar {
   width: 40px;
   height: 40px;
-  background: #ecf5ff;
-  border-radius: 50%;
+  border-radius: 8px;
+  background: #f3f4f6;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 12px;
+  flex-shrink: 0;
 }
 
 .activity-icon {
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .activity-content {
@@ -617,57 +468,52 @@ function getStatusText(status) {
 }
 
 .activity-title {
-  font-size: 15px;
-  font-weight: 500;
-  color: #2c3e50;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .activity-desc {
   font-size: 13px;
-  color: #666;
+  color: #6b7280;
 }
 
 .activity-time {
   font-size: 12px;
-  color: #999;
+  color: #9ca3af;
 }
 
 .activity-status {
   padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .activity-status.pending {
-  background: #fff3cd;
-  color: #856404;
+  background: #fef3c7;
+  color: #d97706;
 }
 
-.activity-status.approved,
-.activity-status.success {
-  background: #d1ecf1;
-  color: #0c5460;
-}
-
-.activity-status.rejected,
-.activity-status.error {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.activity-status.warning {
-  background: #fff3cd;
-  color: #856404;
+.activity-status.approved {
+  background: #dcfce7;
+  color: #16a34a;
 }
 
 .activity-status.info {
-  background: #cce7ff;
-  color: #004085;
+  background: #dbeafe;
+  color: #2563eb;
 }
 
-.status-text {
-  font-size: 11px;
+.activity-status.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.activity-status.warning {
+  background: #fef3c7;
+  color: #d97706;
 }
 
 /* 系统状态区域 */
@@ -677,57 +523,51 @@ function getStatusText(status) {
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .status-item {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f9fafb;
 }
 
 .status-indicator {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: #e74c3c;
-  margin-bottom: 12px;
+  background: #ef4444;
+  flex-shrink: 0;
 }
 
 .status-indicator.healthy {
-  background: #27ae60;
+  background: #10b981;
 }
 
 .status-label {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  flex: 1;
 }
 
 .status-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: #2c3e50;
+  font-size: 13px;
+  color: #6b7280;
 }
 
 /* 响应式设计 */
-@media (min-width: 768px) {
+@media (max-width: 1200px) {
   .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  
-  .actions-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  
-  .status-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -737,30 +577,12 @@ function getStatusText(status) {
   }
   
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    grid-template-columns: 1fr;
   }
   
-  .actions-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  
-  .status-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .dashboard-page {
-    padding: 12px;
-  }
-  
-  .stats-grid,
-  .actions-grid,
   .status-grid {
     grid-template-columns: 1fr;
   }
 }
 </style>
+

@@ -1,5 +1,6 @@
 // 通用请求封装
-const BASE_URL = 'http://127.0.0.1:8080' // 后端API地址
+// 使用 Vite 代理，不需要完整的后端地址
+const BASE_URL = '' // 使用相对路径，通过 Vite 代理转发
 
 // 请求拦截器
 function request(url, options = {}) {
@@ -13,8 +14,17 @@ function request(url, options = {}) {
 
   // 添加认证token
   const token = localStorage.getItem('adminToken')
+  console.log('[TOKEN] 当前获取到的token:', token)
+  console.log('[TOKEN] token类型:', typeof token)
+  console.log('[TOKEN] token长度:', token ? token.length : 'N/A')
+  console.log('[TOKEN] localStorage可用性:', typeof(Storage) !== "undefined")
+  console.log('[TOKEN] localStorage所有键:', Object.keys(localStorage))
+  
   if (token) {
     defaultOptions.headers.Authorization = `Bearer ${token}`
+    console.log('[TOKEN] 已添加Authorization头')
+  } else {
+    console.log('[TOKEN] 未找到token，跳过Authorization头')
   }
 
   const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`
@@ -35,6 +45,7 @@ function request(url, options = {}) {
       console.log(`=== 响应状态 ===`)
       console.log(`状态码: ${response.status}`)
       console.log(`状态文本: ${response.statusText}`)
+      console.log(`Content-Type:`, response.headers.get('content-type'))
       
       if (!response.ok) {
         const error = new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -42,6 +53,20 @@ function request(url, options = {}) {
         error.networkError = true
         throw error
       }
+      
+      // 检查响应的 Content-Type 来决定如何解析
+      const contentType = response.headers.get('content-type')
+      
+      // 如果是登录接口且返回纯文本，处理为 token
+      if (url.includes('/api/admin/login') && (!contentType || !contentType.includes('application/json'))) {
+        console.log('检测到登录接口返回纯文本，作为token处理')
+        return response.text().then(token => {
+          console.log('纯文本token:', token)
+          return { token: token.trim() } // 包装成对象格式
+        })
+      }
+      
+      // 默认按 JSON 处理
       return response.json()
     })
     .then(data => {
@@ -53,16 +78,7 @@ function request(url, options = {}) {
       console.error(`=== 请求失败 ===`)
       console.error(`错误信息:`, error.message)
       
-      // 如果是网络错误，返回模拟数据以便开发
-      if (error.networkError && url.includes('/api/admin/login')) {
-        console.log('=== 使用模拟登录数据 ===')
-        return {
-          success: true,
-          username: 'admin',
-          message: '登录成功（模拟数据）'
-        }
-      }
-      
+      // 不再使用模拟数据，直接抛出错误
       throw error
     })
 }

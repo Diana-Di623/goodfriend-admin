@@ -25,8 +25,8 @@
       <div class="nav-menu">
         <div 
           class="nav-item"
-          :class="{ active: currentModule === 'dashboard' }"
-          @click="switchModule('dashboard')"
+          :class="{ active: $route.path === '/admin/dashboard' }"
+          @click="router.push('/admin/dashboard')"
         >
           <span class="nav-icon">🏠</span>
           <span class="nav-label">仪表板</span>
@@ -34,8 +34,8 @@
         
         <div 
           class="nav-item"
-          :class="{ active: currentModule === 'applications' }"
-          @click="switchModule('applications')"
+          :class="{ active: $route.path === '/admin/counselors/applications' }"
+          @click="router.push('/admin/counselors/applications')"
         >
           <span class="nav-icon">📋</span>
           <span class="nav-label">咨询师申请</span>
@@ -44,8 +44,8 @@
         
         <div 
           class="nav-item"
-          :class="{ active: currentModule === 'counselors' }"
-          @click="switchModule('counselors')"
+          :class="{ active: $route.path === '/admin/counselors' }"
+          @click="router.push('/admin/counselors')"
         >
           <span class="nav-icon">👨‍⚕️</span>
           <span class="nav-label">咨询师管理</span>
@@ -53,8 +53,8 @@
         
         <div 
           class="nav-item"
-          :class="{ active: currentModule === 'users' }"
-          @click="switchModule('users')"
+          :class="{ active: $route.path.includes('/admin/users') }"
+          @click="router.push('/admin/users')"
         >
           <span class="nav-icon">👥</span>
           <span class="nav-label">用户管理</span>
@@ -62,59 +62,37 @@
         
         <div 
           class="nav-item"
-          :class="{ active: currentModule === 'statistics' }"
-          @click="switchModule('statistics')"
+          :class="{ active: $route.path.includes('/admin/statistics') }"
+          @click="router.push('/admin/statistics')"
         >
           <span class="nav-icon">📊</span>
           <span class="nav-label">数据统计</span>
+        </div>
+        
+        <div 
+          class="nav-item"
+          :class="{ active: $route.path === '/admin/avatar-upload' }"
+          @click="router.push('/admin/avatar-upload')"
+        >
+          <span class="nav-icon">🖼️</span>
+          <span class="nav-label">头像上传</span>
         </div>
       </div>
     </div>
 
     <!-- 主内容区域 -->
     <div class="main-content">
-      <!-- 仪表板模块 -->
-      <div v-if="currentModule === 'dashboard'" class="module-content">
-        <Dashboard @switchModule="switchModule" />
-      </div>
-      
-      <!-- 其他模块占位 -->
-      <div v-if="currentModule === 'applications'" class="module-content">
-        <div class="placeholder-content">
-          <p class="placeholder-text">咨询师申请管理功能开发中...</p>
-        </div>
-      </div>
-      
-      <div v-if="currentModule === 'counselors'" class="module-content">
-        <div class="placeholder-content">
-          <p class="placeholder-text">咨询师管理功能开发中...</p>
-        </div>
-      </div>
-      
-      <div v-if="currentModule === 'users'" class="module-content">
-        <div class="placeholder-content">
-          <p class="placeholder-text">用户管理功能开发中...</p>
-        </div>
-      </div>
-      
-      <div v-if="currentModule === 'statistics'" class="module-content">
-        <div class="placeholder-content">
-          <p class="placeholder-text">数据统计功能开发中...</p>
-        </div>
-      </div>
+      <!-- 路由视图 -->
+      <router-view />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import Dashboard from './dashboard.vue'
 
 const router = useRouter()
-
-// 当前模块
-const currentModule = ref('dashboard')
 
 // 模拟数据
 const pendingCount = computed(() => {
@@ -124,12 +102,6 @@ const pendingCount = computed(() => {
 onMounted(() => {
   console.log('管理员主页已加载')
 })
-
-// 方法
-function switchModule(module) {
-  console.log('切换到模块:', module)
-  currentModule.value = module
-}
 
 function handleLogout() {
   console.log('🚪 退出登录按钮被点击')

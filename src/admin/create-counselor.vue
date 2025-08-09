@@ -35,118 +35,7 @@
               required
               class="form-input"
             />
-          </div>
-
-          <div class="form-group">
-            <label for="password">登录密码 <span class="required">*</span></label>
-            <input
-              id="password"
-              v-model="form.password"
-              type="password"
-              placeholder="请输入登录密码"
-              required
-              minlength="6"
-              class="form-input"
-            />
-            <small class="form-hint">密码至少6位字符</small>
-          </div>
-
-          <div class="form-group">
-            <label for="email">邮箱</label>
-            <input
-              id="email"
-              v-model="form.email"
-              type="email"
-              placeholder="请输入邮箱地址"
-              class="form-input"
-            />
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>专业信息</h3>
-          
-          <div class="form-group">
-            <label for="title">职称</label>
-            <select id="title" v-model="form.title" class="form-input">
-              <option value="">请选择职称</option>
-              <option value="助理咨询师">助理咨询师</option>
-              <option value="咨询师">咨询师</option>
-              <option value="高级咨询师">高级咨询师</option>
-              <option value="主任咨询师">主任咨询师</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="experience">从业经验（年）</label>
-            <input
-              id="experience"
-              v-model.number="form.experience"
-              type="number"
-              min="0"
-              max="50"
-              placeholder="请输入从业年限"
-              class="form-input"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="specialties">专业领域</label>
-            <textarea
-              id="specialties"
-              v-model="form.specialties"
-              placeholder="请输入专业领域，如：焦虑症、抑郁症治疗、家庭关系咨询等"
-              rows="3"
-              class="form-textarea"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="education">教育背景</label>
-            <textarea
-              id="education"
-              v-model="form.education"
-              placeholder="请输入教育背景"
-              rows="3"
-              class="form-textarea"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="certificates">资格证书</label>
-            <textarea
-              id="certificates"
-              v-model="form.certificates"
-              placeholder="请输入相关资格证书"
-              rows="2"
-              class="form-textarea"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h3>个人简介</h3>
-          
-          <div class="form-group">
-            <label for="introduction">个人简介</label>
-            <textarea
-              id="introduction"
-              v-model="form.introduction"
-              placeholder="请输入个人简介"
-              rows="5"
-              class="form-textarea"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="consultationStyle">咨询风格</label>
-            <textarea
-              id="consultationStyle"
-              v-model="form.consultationStyle"
-              placeholder="请描述咨询风格"
-              rows="3"
-              class="form-textarea"
-            ></textarea>
+            <small class="form-hint">手机号将作为登录账号</small>
           </div>
         </div>
 
@@ -155,7 +44,7 @@
             重置
           </button>
           <button type="submit" :disabled="isSubmitting" class="submit-btn">
-            {{ isSubmitting ? '提交中...' : '添加咨询师' }}
+            {{ isSubmitting ? '添加中...' : '添加咨询师' }}
           </button>
         </div>
       </form>
@@ -171,19 +60,10 @@ import { adminAPI } from '@/utils/adminAPI.js'
 const router = useRouter()
 const isSubmitting = ref(false)
 
-// 表单数据
+// 简化表单数据，只包含必需的两个字段
 const form = reactive({
-  name: '徭磊',
-  phone: '13280345767',
-  password: 'LatY6C3cvQ4QARW',
-  email: '',
-  title: '',
-  experience: null,
-  specialties: '',
-  education: '',
-  certificates: '',
-  introduction: '',
-  consultationStyle: ''
+  name: '',
+  phone: ''
 })
 
 // 提交表单
@@ -193,19 +73,10 @@ async function handleSubmit() {
   isSubmitting.value = true
   
   try {
-    // 构建提交数据
+    // 构建提交数据，只包含 name 和 phone
     const submitData = {
       name: form.name.trim(),
-      phone: form.phone.trim(),
-      password: form.password.trim(),
-      email: form.email?.trim() || undefined,
-      title: form.title || undefined,
-      experience: form.experience || undefined,
-      specialties: form.specialties?.trim() || undefined,
-      education: form.education?.trim() || undefined,
-      certificates: form.certificates?.trim() || undefined,
-      introduction: form.introduction?.trim() || undefined,
-      consultationStyle: form.consultationStyle?.trim() || undefined
+      phone: form.phone.trim()
     }
     
     console.log('提交咨询师数据：', submitData)
@@ -237,19 +108,8 @@ async function handleSubmit() {
 // 重置表单
 function resetForm() {
   if (confirm('确定要重置表单吗？')) {
-    Object.assign(form, {
-      name: '',
-      phone: '',
-      password: '',
-      email: '',
-      title: '',
-      experience: null,
-      specialties: '',
-      education: '',
-      certificates: '',
-      introduction: '',
-      consultationStyle: ''
-    })
+    form.name = ''
+    form.phone = ''
   }
 }
 </script>
@@ -266,93 +126,100 @@ function resetForm() {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #eee;
 }
 
 .header h1 {
-  color: #2c3e50;
   margin: 0;
+  color: #333;
+  font-size: 28px;
 }
 
 .back-btn {
-  background: #95a5a6;
+  padding: 10px 20px;
+  background: #6c757d;
   color: white;
   border: none;
-  padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+  transition: background 0.3s;
 }
 
 .back-btn:hover {
-  background: #7f8c8d;
+  background: #5a6268;
 }
 
 .form-container {
   background: white;
   border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+  width: 620px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.counselor-form {
   padding: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .form-section {
-  margin-bottom: 40px;
-}
-
-.form-section:last-of-type {
   margin-bottom: 30px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .form-section h3 {
-  color: #2c3e50;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #3498db;
+  margin: 0 0 20px 0;
+  color: #333;
   font-size: 18px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 8px;
 }
 
 .form-group {
   margin-bottom: 20px;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 6px;
-  color: #34495e;
+  margin-bottom: 5px;
   font-weight: 500;
+  color: #333;
 }
 
 .required {
-  color: #e74c3c;
+  color: #dc3545;
 }
 
-.form-input, .form-textarea {
-  width: 100%;
-  padding: 10px 12px;
+.form-input {
+  width: 280px;
+  padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  transition: border-color 0.3s ease;
-  box-sizing: border-box;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-}
-
-.form-textarea {
-  resize: vertical;
-  font-family: inherit;
-  line-height: 1.5;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 
 .form-hint {
   display: block;
-  margin-top: 4px;
-  color: #7f8c8d;
+  margin-top: 5px;
+  color: #6c757d;
   font-size: 12px;
 }
 
@@ -364,60 +231,58 @@ function resetForm() {
   border-top: 1px solid #eee;
 }
 
-.reset-btn, .submit-btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
 .reset-btn {
-  background: #95a5a6;
+  padding: 12px 24px;
+  background: #6c757d;
   color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
 }
 
 .reset-btn:hover {
-  background: #7f8c8d;
+  background: #5a6268;
 }
 
 .submit-btn {
-  background: #27ae60;
+  padding: 12px 24px;
+  background: #28a745;
   color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #229954;
+  background: #218838;
 }
 
 .submit-btn:disabled {
-  background: #bdc3c7;
+  background: #6c757d;
   cursor: not-allowed;
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .create-counselor {
-    padding: 15px;
-  }
-  
-  .form-container {
-    padding: 20px;
+    padding: 10px;
   }
   
   .header {
     flex-direction: column;
     gap: 15px;
-    align-items: flex-start;
+    align-items: stretch;
+  }
+  
+  .counselor-form {
+    padding: 20px;
   }
   
   .form-actions {
     flex-direction: column;
-  }
-  
-  .reset-btn, .submit-btn {
-    width: 100%;
   }
 }
 </style>

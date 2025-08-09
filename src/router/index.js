@@ -2,6 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '@/admin/login.vue'
 import Dashboard from '@/admin/dashboard.vue'
 import AdminIndex from '@/admin/index.vue'
+import CounselorManagement from '@/admin/counselor-management.vue'
+import CounselorApplications from '@/admin/counselor-applications.vue'
+import CreateCounselor from '@/admin/create-counselor.vue'
+import CounselorDetail from '@/admin/counselor-detail.vue'
+import ImageUpload from '@/admin/imageupload.vue'
 
 const routes = [
   {
@@ -26,6 +31,31 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: Dashboard
+      },
+      {
+        path: 'counselors',
+        name: 'CounselorManagement',
+        component: CounselorManagement
+      },
+      {
+        path: 'counselors/applications',
+        name: 'CounselorApplications',
+        component: CounselorApplications
+      },
+      {
+        path: 'counselors/create',
+        name: 'CreateCounselor',
+        component: CreateCounselor
+      },
+      {
+        path: 'counselors/:id',
+        name: 'CounselorDetail',
+        component: CounselorDetail
+      },
+      {
+        path: 'avatar-upload',
+        name: 'AvatarUpload',
+        component: ImageUpload
       }
     ]
   }
