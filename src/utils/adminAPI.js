@@ -37,38 +37,40 @@ export const adminAPI = {
   },
 
   // 审核咨询师申请
-  reviewApplication(applicationId, decision, reason = '') {
+  reviewApplication(applicationId, approve, rejectReason = '') {
     console.log('=== 审核咨询师申请 ===')
     console.log('申请ID:', applicationId)
-    console.log('审核结果:', decision) // 'approve' 或 'reject'
-    console.log('审核理由:', reason)
+    console.log('是否通过:', approve) // true 或 false
+    console.log('拒绝理由:', rejectReason)
     
     const reviewData = {
-      decision,
-      reason
+      approve,
+      rejectReason: approve ? ' ' : rejectReason // 通过时使用空格，拒绝时使用具体理由
     }
     
-    return request(`/api/admin/consultant/applications/${applicationId}/review`, {
-      method: 'POST',
+    console.log('审核数据:', reviewData)
+    
+    return request(`/api/admin/consultant/application/${applicationId}/review`, {
+      method: 'PUT',
       data: reviewData
     })
   },
 
   // 批量审核申请
-  batchReviewApplications(applicationIds, decision, reason = '') {
+  batchReviewApplications(applicationIds, approve, rejectReason = '') {
     console.log('=== 批量审核申请 ===')
     console.log('申请IDs:', applicationIds)
-    console.log('审核结果:', decision)
-    console.log('审核理由:', reason)
+    console.log('是否通过:', approve)
+    console.log('拒绝理由:', rejectReason)
     
     const batchData = {
       applicationIds,
-      decision,
-      reason
+      approve,
+      rejectReason: approve ? ' ' : rejectReason
     }
     
-    return request('/api/admin/consultant/applications/batch-review', {
-      method: 'POST',
+    return request('/api/admin/consultant/application/batch-review', {
+      method: 'PUT',
       data: batchData
     })
   },
@@ -97,7 +99,7 @@ export const adminAPI = {
       queryParams.append('sortOrder', params.sortOrder)
     }
     
-    const url = `/api/admin/consultants${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    const url = `/api/consultant/all${queryParams.toString() ? '?' + queryParams.toString() : ''}`
     console.log('请求URL:', url)
     console.log('请求参数:', params)
     
@@ -139,7 +141,7 @@ export const adminAPI = {
     console.log('=== 获取咨询师详情 ===')
     console.log('咨询师ID:', counselorId)
     
-    return request(`/api/admin/consultants/${counselorId}`, {
+    return request(`/api/consultant/${counselorId}`, {
       method: 'GET'
     })
   },
@@ -456,6 +458,143 @@ export const adminAPI = {
     .catch(error => {
       console.error(`=== 文件上传失败 ===`)
       console.error(`错误信息:`, error.message)
+      throw error
+    })
+  },
+
+  // 获取所有咨询师信息
+  getAllConsultants(params = {}) {
+    console.log('=== 获取所有咨询师信息 ===')
+    const queryParams = new URLSearchParams()
+    
+    // 支持的查询参数
+    if (params.status) {
+      queryParams.append('status', params.status) // active, inactive, all
+    }
+    if (params.keyword) {
+      queryParams.append('keyword', params.keyword) // 搜索关键词
+    }
+    if (params.specialty) {
+      queryParams.append('specialty', params.specialty) // 专业领域筛选
+    }
+    if (params.page) {
+      queryParams.append('page', params.page) // 页码
+    }
+    if (params.size) {
+      queryParams.append('size', params.size) // 每页条数
+    }
+    if (params.sortBy) {
+      queryParams.append('sortBy', params.sortBy) // 排序字段：rating, experience, joinDate
+    }
+    if (params.sortOrder) {
+      queryParams.append('sortOrder', params.sortOrder) // 排序顺序：asc, desc
+    }
+    
+    const url = `/api/consultant/all${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    console.log('请求URL:', url)
+    console.log('请求参数:', params)
+    
+    return request(url, {
+      method: 'GET'
+    })
+    .then(response => {
+      console.log('=== 获取所有咨询师信息响应 ===')
+      console.log('响应数据:', response)
+      return response
+    })
+    .catch(error => {
+      console.error('=== 获取所有咨询师信息失败 ===')
+      console.error('错误详情:', error)
+      
+      // 如果是网络错误，抛出错误让调用方处理
+      throw error
+    })
+  },
+
+  // 获取咨询师详细统计信息
+  getCounselorStats(counselorId) {
+    console.log('=== 获取咨询师详细统计信息 ===')
+    console.log('咨询师ID:', counselorId)
+    
+    return request(`/api/consultant/${counselorId}/stats`, {
+      method: 'GET'
+    })
+    .then(response => {
+      console.log('=== 咨询师统计信息响应 ===')
+      console.log('统计数据:', response)
+      return response
+    })
+    .catch(error => {
+      console.error('=== 获取咨询师统计信息失败 ===')
+      console.error('错误详情:', error)
+      throw error
+    })
+  },
+
+  // 获取咨询师最近活动记录
+  getCounselorActivities(counselorId, params = {}) {
+    console.log('=== 获取咨询师活动记录 ===')
+    console.log('咨询师ID:', counselorId)
+    
+    const queryParams = new URLSearchParams()
+    if (params.page) {
+      queryParams.append('page', params.page)
+    }
+    if (params.size) {
+      queryParams.append('size', params.size)
+    }
+    if (params.type) {
+      queryParams.append('type', params.type) // login, consultation, update_profile
+    }
+    
+    const url = `/api/consultant/${counselorId}/activities${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    console.log('请求URL:', url)
+    
+    return request(url, {
+      method: 'GET'
+    })
+    .then(response => {
+      console.log('=== 咨询师活动记录响应 ===')
+      console.log('活动数据:', response)
+      return response
+    })
+    .catch(error => {
+      console.error('=== 获取咨询师活动记录失败 ===')
+      console.error('错误详情:', error)
+      throw error
+    })
+  },
+
+  // 获取咨询师客户评价
+  getCounselorReviews(counselorId, params = {}) {
+    console.log('=== 获取咨询师客户评价 ===')
+    console.log('咨询师ID:', counselorId)
+    
+    const queryParams = new URLSearchParams()
+    if (params.page) {
+      queryParams.append('page', params.page)
+    }
+    if (params.size) {
+      queryParams.append('size', params.size)
+    }
+    if (params.rating) {
+      queryParams.append('rating', params.rating) // 筛选特定评分
+    }
+    
+    const url = `/api/consultant/${counselorId}/reviews${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    console.log('请求URL:', url)
+    
+    return request(url, {
+      method: 'GET'
+    })
+    .then(response => {
+      console.log('=== 咨询师评价响应 ===')
+      console.log('评价数据:', response)
+      return response
+    })
+    .catch(error => {
+      console.error('=== 获取咨询师评价失败 ===')
+      console.error('错误详情:', error)
       throw error
     })
   }

@@ -1,9 +1,0 @@
-/* Logo文件说明
-   请将您提供的logo图片重命名为logo.png并放置在public/static/目录下
-   图片应该是您提供的蓝色和粉色的好朋友心理logo
-   
-   支持的格式：PNG（推荐，支持透明背景）
-   建议尺寸：200x200像素或更高，正方形比例
-   文件名：logo.png
-   路径：public/static/logo.png
-*/

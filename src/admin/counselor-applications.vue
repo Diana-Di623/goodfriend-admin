@@ -161,7 +161,7 @@ async function approveApplication(applicationId) {
   if (!confirm('确定要通过这个申请吗？')) return
   
   try {
-    await adminAPI.reviewApplication(applicationId, 'approve', '申请材料完整，专业背景符合要求')
+    await adminAPI.reviewApplication(applicationId, true, '申请材料完整，专业背景符合要求')
     alert('审核通过成功')
     loadApplications()
   } catch (error) {
@@ -175,7 +175,7 @@ async function rejectApplication(applicationId) {
   if (!reason) return
   
   try {
-    await adminAPI.reviewApplication(applicationId, 'reject', reason)
+    await adminAPI.reviewApplication(applicationId, false, reason)
     alert('已拒绝申请')
     loadApplications()
   } catch (error) {

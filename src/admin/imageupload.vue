@@ -8,7 +8,7 @@
     <div class="upload-form">
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
-          <label for="filename">头像文件名 *</label>
+          <label for="filename">头像文件名(不要加后缀.jpg/.png)</label>
           <input 
             id="filename" 
             type="text" 
@@ -29,7 +29,7 @@
         </div>
 
         <div class="form-group">
-          <label for="file">选择头像图片 *</label>
+          <label for="file">选择头像图片 </label>
           <div class="file-input-container">
             <input 
               id="file" 
@@ -39,7 +39,7 @@
               accept="image/*"
               required
             />
-            <small class="file-hint">建议尺寸：200x200 像素，文件大小不超过 2MB</small>
+            <small class="file-hint">建议尺寸：100x100 像素，文件大小不超过 1MB</small>
             <div v-if="selectedFile" class="file-info">
               <p><strong>已选择文件:</strong> {{ selectedFile.name }}</p>
               <p><strong>文件大小:</strong> {{ formatFileSize(selectedFile.size) }}</p>
@@ -148,9 +148,9 @@ export default {
           return
         }
         
-        // 验证文件大小（2MB）
-        if (file.size > 2 * 1024 * 1024) {
-          alert('文件大小不能超过 2MB')
+        // 验证文件大小（1MB）
+        if (file.size > 1 * 1024 * 1024) {
+          alert('文件大小不能超过 1MB')
           return
         }
 

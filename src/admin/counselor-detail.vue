@@ -1,789 +1,670 @@
-<template>
-  <view class="counselor-detail-page">
-    <!-- 头部 -->
-    <view class="header">
-      <view class="header-content">
-        <view class="nav-left" @click="goBack">
-          <text class="back-icon">←</text>
-          <text class="back-text">返回</text>
-        </view>
-        <text class="title">咨询师详情</text>
-        <view class="nav-right">
-          <view class="action-btn" @click="toggleCounselorStatus">
-            <text class="action-text">{{ counselor.isActive ? '停用' : '启用' }}</text>
-          </view>
-        </view>
-      </view>
-    </view>
 
-    <!-- 咨询师基本信息 -->
-    <view class="counselor-info-section">
-      <view class="info-card">
-        <view class="counselor-header">
-          <view class="avatar-section">
-            <image 
-              :src="counselor.avatar || '/static/user/avatars/default.jpg'"
+<template>
+  <div class="counselor-detail-page">
+    <!-- 头部 -->
+    <div class="header">
+      <div class="header-content">
+        <div class="nav-left" @click="goBack">
+          <span class="back-icon">←</span>
+          <span class="back-text">返回</span>
+        </div>
+        <h1 class="title">咨询师详情</h1>
+        <div class="nav-right">
+          <button 
+            class="action-btn" 
+            @click="toggleCounselorStatus"
+            v-if="counselor.id"
+          >
+            {{ counselor.status === 'active' ? '停用' : '启用' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading">
+      <div class="loading-spinner"></div>
+      <p>正在加载咨询师详情...</p>
+    </div>
+
+    <!-- 咨询师详情内容 -->
+    <div v-else-if="counselor.id" class="counselor-content">
+      <!-- 基本信息 -->
+      <div class="info-card">
+        <div class="counselor-header">
+          <div class="avatar-section">
+            <img 
+              :src="getAvatarUrl(counselor.avatar)"
               class="counselor-avatar"
-              mode="aspectFill"
+              alt="咨询师头像"
             />
-            <view class="status-indicator" :class="{ active: counselor.isActive }">
-              <text class="status-text">{{ counselor.isActive ? '在线' : '离线' }}</text>
-            </view>
-          </view>
+            <div class="status-indicator" :class="{ active: counselor.status === 'active' }">
+              <span class="status-text">{{ counselor.status === 'active' ? '在职' : '离职' }}</span>
+            </div>
+          </div>
           
-          <view class="basic-info">
-            <text class="counselor-name">{{ counselor.name || '未知' }}</text>
-            <text class="counselor-title">{{ counselor.title || '心理咨询师' }}</text>
-            <view class="rating-section">
-              <view class="stars">
-                <text 
+          <div class="basic-info">
+            <h2 class="counselor-name">{{ counselor.name || '未知' }}</h2>
+            <p class="counselor-title">{{ counselor.level || '心理咨询师' }}</p>
+            <div class="rating-section">
+              <div class="stars">
+                <span 
                   v-for="i in 5"
                   :key="i"
                   class="star"
                   :class="{ filled: i <= (counselor.rating || 0) }"
                 >
                   ★
-                </text>
-              </view>
-              <text class="rating-text">{{ counselor.rating || 0 }}/5.0</text>
-            </view>
-            <text class="experience-text">从业经验：{{ counselor.experience || 0 }}年</text>
-          </view>
-        </view>
+                </span>
+              </div>
+              <span class="rating-text">{{ counselor.rating || 0 }}/5.0</span>
+            </div>
+            <p class="experience-text">从业经验：{{ counselor.experienceYears || 0 }}年</p>
+          </div>
+        </div>
         
-        <view class="contact-info">
-          <view class="contact-item">
-            <text class="contact-label">手机号：</text>
-            <text class="contact-value">{{ counselor.phone || '未填写' }}</text>
-          </view>
-          <view class="contact-item">
-            <text class="contact-label">邮箱：</text>
-            <text class="contact-value">{{ counselor.email || '未填写' }}</text>
-          </view>
-          <view class="contact-item">
-            <text class="contact-label">执业证书：</text>
-            <text class="contact-value">{{ counselor.licenseNumber || '无' }}</text>
-          </view>
-        </view>
-      </view>
-    </view>
+        <div class="contact-info">
+          <div class="contact-item" v-if="counselor.phone">
+            <label>手机号：</label>
+            <span>{{ counselor.phone }}</span>
+          </div>
+          <div class="contact-item" v-if="counselor.email">
+            <label>邮箱：</label>
+            <span>{{ counselor.email }}</span>
+          </div>
+          <div class="contact-item">
+            <label>性别：</label>
+            <span>{{ getGenderText(counselor.gender) }}</span>
+          </div>
+          <div class="contact-item" v-if="counselor.location">
+            <label>所在地：</label>
+            <span>{{ counselor.location }}</span>
+          </div>
+        </div>
+      </div>
 
-    <!-- 教育背景 -->
-    <view class="education-section">
-      <view class="section-header">
-        <text class="section-title">教育背景</text>
-      </view>
-      <view class="info-card">
-        <view class="education-item">
-          <text class="education-label">学历：</text>
-          <text class="education-value">{{ counselor.education || '未填写' }}</text>
-        </view>
-        <view class="education-item">
-          <text class="education-label">毕业院校：</text>
-          <text class="education-value">{{ counselor.university || '未填写' }}</text>
-        </view>
-        <view class="education-item">
-          <text class="education-label">所学专业：</text>
-          <text class="education-value">{{ counselor.major || '未填写' }}</text>
-        </view>
-      </view>
-    </view>
+      <!-- 专业信息 -->
+      <div class="info-card" v-if="counselor.specialty && counselor.specialty.length > 0">
+        <h3>专业领域</h3>
+        <div class="specialty-tags">
+          <span 
+            v-for="spec in counselor.specialty" 
+            :key="spec" 
+            class="specialty-tag"
+            v-if="spec !== '未填写'"
+          >
+            {{ spec }}
+          </span>
+        </div>
+      </div>
 
-    <!-- 专业信息 -->
-    <view class="specialty-section">
-      <view class="section-header">
-        <text class="section-title">专业信息</text>
-      </view>
-      <view class="info-card">
-        <view class="specialty-item">
-          <text class="specialty-label">擅长领域：</text>
-          <view class="specialty-tags">
-            <text 
-              v-for="specialty in (counselor.specialty || [])"
-              :key="specialty"
-              class="specialty-tag"
-            >
-              {{ specialty }}
-            </text>
-          </view>
-        </view>
-        <view class="specialty-item" v-if="counselor.bio">
-          <text class="specialty-label">个人简介：</text>
-          <text class="bio-text">{{ counselor.bio }}</text>
-        </view>
-      </view>
-    </view>
+      <!-- 个人简介 -->
+      <div class="info-card" v-if="counselor.bio">
+        <h3>个人简介</h3>
+        <p class="bio-text">{{ counselor.bio }}</p>
+      </div>
 
-    <!-- 统计信息 -->
-    <view class="statistics-section">
-      <view class="section-header">
-        <text class="section-title">服务统计</text>
-      </view>
-      <view class="info-card">
-        <view class="stats-grid">
-          <view class="stat-item">
-            <text class="stat-number">{{ counselor.totalConsultations || 0 }}</text>
-            <text class="stat-label">总咨询次数</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-number">{{ counselor.totalClients || 0 }}</text>
-            <text class="stat-label">服务客户数</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-number">{{ counselor.averageRating || 0 }}</text>
-            <text class="stat-label">平均评分</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-number">{{ counselor.responseRate || 0 }}%</text>
-            <text class="stat-label">回复率</text>
-          </view>
-        </view>
-      </view>
-    </view>
+      <!-- 教育背景 -->
+      <div class="info-card" v-if="counselor.educationList && counselor.educationList.length > 0">
+        <h3>教育背景</h3>
+        <div class="education-list">
+          <div 
+            v-for="education in counselor.educationList" 
+            :key="education.school + education.time"
+            class="education-item"
+          >
+            <div class="education-degree">{{ education.degree }}</div>
+            <div class="education-school">{{ education.school }}</div>
+            <div class="education-major">{{ education.major }}</div>
+            <div class="education-time">{{ education.time }}</div>
+          </div>
+        </div>
+      </div>
 
-    <!-- 最近活动 -->
-    <view class="activity-section">
-      <view class="section-header">
-        <text class="section-title">最近活动</text>
-      </view>
-      <view class="info-card">
-        <view class="activity-list">
-          <view 
+      <!-- 工作经历 -->
+      <div class="info-card" v-if="counselor.experienceList && counselor.experienceList.length > 0">
+        <h3>工作经历</h3>
+        <div class="experience-list">
+          <div 
+            v-for="experience in counselor.experienceList" 
+            :key="experience.company + experience.duration"
+            class="experience-item"
+          >
+            <div class="experience-company">{{ experience.company }}</div>
+            <div class="experience-position">{{ experience.position }}</div>
+            <div class="experience-duration">{{ experience.duration }}</div>
+            <div class="experience-description">{{ experience.description }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 认证资质 -->
+      <div class="info-card" v-if="counselor.certificationList && counselor.certificationList.length > 0">
+        <h3>认证资质</h3>
+        <div class="certification-list">
+          <div 
+            v-for="cert in counselor.certificationList" 
+            :key="cert.number"
+            class="certification-item"
+          >
+            <div class="certification-name">{{ cert.name }}</div>
+            <div class="certification-number">证书编号：{{ cert.number }}</div>
+            <div class="certification-issuer">发证机构：{{ cert.issuer }}</div>
+            <div class="certification-date">发证时间：{{ cert.date }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 服务统计 -->
+      <div class="info-card">
+        <h3>服务统计</h3>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number">{{ counselor.consultationHours || 0 }}</span>
+            <span class="stat-label">咨询时长</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ counselor.experienceYears || 0 }}</span>
+            <span class="stat-label">从业年限</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ counselor.trainingHours || 0 }}</span>
+            <span class="stat-label">培训时长</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ counselor.supervisionHours || 0 }}</span>
+            <span class="stat-label">督导时长</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">{{ counselor.rating || 0 }}</span>
+            <span class="stat-label">平均评分</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">¥{{ counselor.pricePerHour || 0 }}</span>
+            <span class="stat-label">每小时费用</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 服务信息 -->
+      <div class="info-card" v-if="counselor.consultationMethods || counselor.availability">
+        <h3>服务信息</h3>
+        <div class="service-info">
+          <div class="service-item" v-if="counselor.consultationMethods">
+            <label>咨询方式：</label>
+            <span>{{ counselor.consultationMethods.join(', ') }}</span>
+          </div>
+          <div class="service-item" v-if="counselor.availability">
+            <label>服务时间：</label>
+            <span>{{ counselor.availability }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 最近活动 -->
+      <div class="info-card" v-if="recentActivities.length > 0">
+        <h3>最近活动</h3>
+        <div class="activity-list">
+          <div 
             v-for="activity in recentActivities"
             :key="activity.id"
             class="activity-item"
           >
-            <view class="activity-icon">{{ activity.icon }}</view>
-            <view class="activity-content">
-              <text class="activity-text">{{ activity.description }}</text>
-              <text class="activity-time">{{ formatTime(activity.time) }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
+            <span class="activity-icon">{{ activity.icon }}</span>
+            <div class="activity-content">
+              <p class="activity-text">{{ activity.description }}</p>
+              <span class="activity-time">{{ formatTime(activity.time) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <!-- 操作按钮 -->
-    <view class="action-section">
-      <button 
-        class="action-button"
-        :class="{ 'deactivate-btn': counselor.isActive, 'activate-btn': !counselor.isActive }"
-        @click="toggleCounselorStatus"
-      >
-        {{ counselor.isActive ? '停用咨询师' : '启用咨询师' }}
-      </button>
-      <button class="action-button contact-btn" @click="contactCounselor">
-        联系咨询师
-      </button>
-    </view>
-  </view>
+    <!-- 无数据状态 -->
+    <div v-else class="no-data">
+      <p>未找到咨询师信息</p>
+      <button @click="goBack" class="back-btn">返回列表</button>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { adminAPI } from '../utils/adminAPI.js'
 
-// 咨询师信息
-const counselor = ref({
-  id: 1,
-  name: '张心理医生',
-  title: '国家二级心理咨询师',
-  avatar: '/static/user/avatars/avatar1.jpg',
-  phone: '138****1234',
-  email: 'zhang@example.com',
-  licenseNumber: 'PSY202301001',
-  education: '硕士',
-  university: '北京师范大学',
-  major: '心理学',
-  experience: 8,
-  specialty: ['焦虑抑郁', '情感关系', '认知行为治疗'],
-  bio: '拥有8年临床心理咨询经验，专注于认知行为疗法的应用，曾在多个心理健康机构任职，具有丰富的个体咨询和团体治疗经验。擅长处理焦虑、抑郁、情感问题等心理困扰。',
-  isActive: true,
-  rating: 4.8,
-  totalConsultations: 256,
-  totalClients: 189,
-  averageRating: 4.8,
-  responseRate: 95,
-  joinDate: '2022-03-15T10:00:00Z'
-})
+const route = useRoute()
+const router = useRouter()
 
-// 最近活动
-const recentActivities = ref([
-  {
-    id: 1,
-    icon: '💬',
-    description: '完成了一次心理咨询',
-    time: '2025-01-20T14:30:00Z'
-  },
-  {
-    id: 2,
-    icon: '📊',
-    description: '更新了个人资料',
-    time: '2025-01-19T09:15:00Z'
-  },
-  {
-    id: 3,
-    icon: '⭐',
-    description: '收到客户5星好评',
-    time: '2025-01-18T16:45:00Z'
-  },
-  {
-    id: 4,
-    icon: '📚',
-    description: '参加了专业培训',
-    time: '2025-01-17T11:20:00Z'
+// 响应式数据
+const loading = ref(false)
+const counselor = ref({})
+const recentActivities = ref([])
+
+// 获取性别显示文本
+function getGenderText(gender) {
+  switch (gender) {
+    case 'MALE': return '男'
+    case 'FEMALE': return '女'
+    default: return '未知'
   }
-])
-
-onMounted(() => {
-  // 从URL参数获取咨询师ID并加载详情
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const counselorId = currentPage.options.id
-  
-  if (counselorId) {
-    loadCounselorDetail(counselorId)
-  }
-})
-
-// 加载咨询师详情
-async function loadCounselorDetail(counselorId) {
-  try {
-    uni.showLoading({ title: '加载中...' })
-    
-    // 调用API获取咨询师详情
-    const response = await adminAPI.getCounselorDetail(counselorId)
-    if (response.success) {
-      counselor.value = {
-        ...counselor.value, // 保留默认值
-        ...response.data,   // 使用API返回的数据覆盖
-        // 确保某些字段的格式正确
-        specialty: Array.isArray(response.data.specialty) ? response.data.specialty : [response.data.specialty || '未填写'],
-        isActive: response.data.status === 'active'
-      }
-    }
-    
-    uni.hideLoading()
-    
-  } catch (error) {
-    uni.hideLoading()
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none'
-    })
-    console.error('加载咨询师详情失败:', error)
-  }
-}
-
-// 返回上一页
-function goBack() {
-  uni.navigateBack({
-    delta: 1
-  })
-}
-
-// 切换咨询师状态
-function toggleCounselorStatus() {
-  const action = counselor.value.isActive ? '停用' : '启用'
-  const actionColor = counselor.value.isActive ? '#e74c3c' : '#67c23a'
-  
-  uni.showModal({
-    title: '确认操作',
-    content: `确定要${action}这位咨询师吗？${action}后咨询师将${counselor.value.isActive ? '无法接受新的咨询请求' : '重新开始接受咨询请求'}。`,
-    confirmText: action,
-    cancelText: '取消',
-    confirmColor: actionColor,
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          uni.showLoading({ title: `${action}中...` })
-          
-          // 调用API更新咨询师状态
-          const newStatus = counselor.value.isActive ? 'inactive' : 'active'
-          const response = await adminAPI.updateCounselorStatus(counselor.value.id, newStatus)
-          
-          if (response.success) {
-            counselor.value.isActive = !counselor.value.isActive
-            
-            uni.hideLoading()
-            uni.showToast({
-              title: `已${action}`,
-              icon: 'success'
-            })
-          } else {
-            throw new Error(response.message || `${action}失败`)
-          }
-          
-        } catch (error) {
-          uni.hideLoading()
-          uni.showToast({
-            title: `${action}失败`,
-            icon: 'none'
-          })
-          console.error(`${action}咨询师失败:`, error)
-        }
-      }
-    }
-  })
-}
-
-// 联系咨询师
-function contactCounselor() {
-  uni.showActionSheet({
-    itemList: ['发送短信', '拨打电话', '发送邮件'],
-    success: (res) => {
-      switch (res.tapIndex) {
-        case 0:
-          // 发送短信
-          uni.showToast({
-            title: '短信功能暂未开放',
-            icon: 'none'
-          })
-          break
-        case 1:
-          // 拨打电话
-          if (counselor.value.phone) {
-            uni.makePhoneCall({
-              phoneNumber: counselor.value.phone.replace(/\*/g, '1') // 实际应用中应该使用真实号码
-            })
-          }
-          break
-        case 2:
-          // 发送邮件
-          uni.showToast({
-            title: '邮件功能暂未开放',
-            icon: 'none'
-          })
-          break
-      }
-    }
-  })
 }
 
 // 格式化时间
 function formatTime(timeString) {
-  const date = new Date(timeString)
-  const now = new Date()
-  const diff = now - date
-  
-  const minutes = Math.floor(diff / (1000 * 60))
-  const hours = Math.floor(diff / (1000 * 60 * 60))
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  
-  if (minutes < 60) {
-    return `${minutes}分钟前`
-  } else if (hours < 24) {
-    return `${hours}小时前`
-  } else if (days < 7) {
-    return `${days}天前`
-  } else {
-    return date.toLocaleDateString('zh-CN')
+  if (!timeString) return ''
+  try {
+    const date = new Date(timeString)
+    return date.toLocaleString('zh-CN')
+  } catch (error) {
+    return timeString
   }
 }
+
+// 获取头像URL
+function getAvatarUrl(avatar) {
+  
+    return `http://127.0.0.1:8080/static/${avatar}`
+  }
+
+// 返回上一页
+function goBack() {
+  router.back()
+}
+
+// 切换咨询师状态
+async function toggleCounselorStatus() {
+  if (!counselor.value.id) return
+  
+  const action = counselor.value.status === 'active' ? '停用' : '启用'
+  const confirmMessage = `确定要${action}这位咨询师吗？`
+  
+  if (confirm(confirmMessage)) {
+    try {
+      loading.value = true
+      const newStatus = counselor.value.status === 'active' ? 'inactive' : 'active'
+      
+      const response = await adminAPI.updateCounselorStatus(counselor.value.id, newStatus)
+      if (response.success) {
+        counselor.value.status = newStatus
+        alert(`咨询师已${action}`)
+      } else {
+        throw new Error(response.message || `${action}失败`)
+      }
+    } catch (error) {
+      console.error('更新咨询师状态失败:', error)
+      alert(`${action}失败，请稍后重试`)
+    } finally {
+      loading.value = false
+    }
+  }
+}
+
+// 加载咨询师详情
+async function loadCounselorDetail(counselorId) {
+  try {
+    loading.value = true
+    console.log('=== 加载咨询师详情 ===')
+    console.log('咨询师ID:', counselorId)
+    
+    // 由于单个咨询师详情API不存在，从所有咨询师列表中查找
+    console.log('从咨询师列表中查找详情信息...')
+    const response = await adminAPI.getAllConsultants()
+    console.log('咨询师列表响应:', response)
+    
+    // 处理响应数据，查找目标咨询师
+    let consultantsList = []
+    if (Array.isArray(response)) {
+      consultantsList = response
+    } else if (response && response.data && Array.isArray(response.data)) {
+      consultantsList = response.data
+    } else if (response && response.success && response.data && Array.isArray(response.data)) {
+      consultantsList = response.data
+    }
+    
+    console.log('咨询师列表:', consultantsList)
+    const targetCounselor = consultantsList.find(c => c.id == counselorId)
+    console.log('找到的咨询师:', targetCounselor)
+    
+    if (targetCounselor) {
+      counselor.value = targetCounselor
+      console.log('咨询师详情加载成功:', counselor.value)
+      
+      // 加载更多详细信息
+      await loadAdditionalInfo(counselorId)
+    } else {
+      console.error('未找到指定的咨询师')
+      console.error('咨询师ID:', counselorId)
+      console.error('可用的咨询师列表:', consultantsList.map(c => ({ id: c.id, name: c.name })))
+      throw new Error(`未找到ID为 ${counselorId} 的咨询师`)
+    }
+  } catch (error) {
+    console.error('加载咨询师详情失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 加载额外信息（统计数据、活动记录等）
+async function loadAdditionalInfo(counselorId) {
+  try {
+    // 并行加载多个API
+    const [statsResponse, activitiesResponse] = await Promise.allSettled([
+      adminAPI.getCounselorStats(counselorId),
+      adminAPI.getCounselorActivities(counselorId, { page: 1, size: 10 })
+    ])
+    
+    // 处理统计信息
+    if (statsResponse.status === 'fulfilled' && statsResponse.value.success) {
+      const stats = statsResponse.value.data
+      // 将统计信息合并到咨询师数据中
+      counselor.value = { ...counselor.value, ...stats }
+      console.log('统计信息加载成功')
+    }
+    
+    // 处理活动记录
+    if (activitiesResponse.status === 'fulfilled' && activitiesResponse.value.success) {
+      const activities = activitiesResponse.value.data
+      recentActivities.value = Array.isArray(activities) ? activities : activities.list || []
+      console.log('活动记录加载成功:', recentActivities.value.length, '条')
+    }
+    
+  } catch (error) {
+    console.error('加载额外信息失败:', error)
+  }
+}
+
+// 组件挂载时加载数据
+onMounted(() => {
+  const counselorId = route.params.id
+  if (counselorId) {
+    loadCounselorDetail(counselorId)
+  } else {
+    console.error('未找到咨询师ID')
+  }
+})
 </script>
 
 <style scoped>
 .counselor-detail-page {
-  min-height: 100vh;
-  background: #f5f7fa;
-  padding-bottom: 120rpx;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* 头部样式 */
 .header {
-  background: #fff;
-  padding: 44rpx 32rpx 20rpx;
-  border-bottom: 1rpx solid #f0f0f0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  margin-bottom: 30px;
 }
 
 .header-content {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 }
 
 .nav-left {
   display: flex;
   align-items: center;
-  gap: 8rpx;
   cursor: pointer;
-  padding: 8rpx;
-  border-radius: 8rpx;
-  transition: background-color 0.2s;
-}
-
-.nav-left:active {
-  background: rgba(0, 0, 0, 0.05);
+  color: #007bff;
 }
 
 .back-icon {
-  font-size: 32rpx;
-  color: #409eff;
-  font-weight: bold;
-}
-
-.back-text {
-  font-size: 24rpx;
-  color: #409eff;
+  font-size: 18px;
+  margin-right: 5px;
 }
 
 .title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #2c3e50;
-  flex: 1;
-  text-align: center;
-}
-
-.nav-right {
-  width: 120rpx;
-  display: flex;
-  justify-content: flex-end;
+  margin: 0;
+  color: #333;
+  font-size: 24px;
 }
 
 .action-btn {
-  padding: 12rpx 20rpx;
-  background: #409eff;
-  color: #fff;
-  border-radius: 8rpx;
-  font-size: 22rpx;
+  padding: 8px 16px;
+  border: 1px solid #007bff;
+  background: #007bff;
+  color: white;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.action-text {
-  color: #fff;
-  font-size: 22rpx;
+.action-btn:hover {
+  background: #0056b3;
 }
 
-/* 咨询师信息区域 */
-.counselor-info-section {
-  padding: 20rpx 32rpx;
+.loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .info-card {
-  background: #fff;
-  border-radius: 16rpx;
-  padding: 32rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.08);
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .counselor-header {
   display: flex;
-  gap: 32rpx;
-  margin-bottom: 32rpx;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
 .avatar-section {
-  position: relative;
+  text-align: center;
 }
 
 .counselor-avatar {
-  width: 160rpx;
-  height: 160rpx;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
-  border: 4rpx solid #fff;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.15);
+  object-fit: cover;
 }
 
 .status-indicator {
-  position: absolute;
-  bottom: 8rpx;
-  right: 8rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 20rpx;
-  font-size: 18rpx;
-  border: 2rpx solid #fff;
-  background: #ddd;
+  margin-top: 10px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  background: #dc3545;
+  color: white;
 }
 
 .status-indicator.active {
-  background: #67c23a;
+  background: #28a745;
 }
 
-.status-text {
-  color: #fff;
-  font-size: 18rpx;
-  font-weight: 500;
-}
-
-.basic-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-}
-
-.counselor-name {
-  font-size: 40rpx;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.counselor-title {
-  font-size: 28rpx;
-  color: #666;
+.basic-info h2 {
+  margin: 0 0 5px 0;
+  color: #333;
 }
 
 .rating-section {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-}
-
-.stars {
-  display: flex;
-  gap: 4rpx;
+  gap: 10px;
+  margin: 10px 0;
 }
 
 .star {
-  font-size: 28rpx;
   color: #ddd;
+  font-size: 16px;
 }
 
 .star.filled {
-  color: #ffd700;
-}
-
-.rating-text {
-  font-size: 24rpx;
-  color: #666;
-}
-
-.experience-text {
-  font-size: 24rpx;
-  color: #666;
+  color: #ffc107;
 }
 
 .contact-info {
-  border-top: 1rpx solid #f0f0f0;
-  padding-top: 24rpx;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
 }
 
 .contact-item {
   display: flex;
-  align-items: center;
-  margin-bottom: 16rpx;
+  gap: 10px;
 }
 
-.contact-label {
-  min-width: 120rpx;
-  font-size: 24rpx;
+.contact-item label {
+  font-weight: bold;
   color: #666;
-}
-
-.contact-value {
-  font-size: 24rpx;
-  color: #333;
-  flex: 1;
-}
-
-/* 部分标题 */
-.section-header {
-  padding: 20rpx 32rpx 0;
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-/* 教育背景 */
-.education-section {
-  padding: 20rpx 32rpx;
-}
-
-.education-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16rpx;
-}
-
-.education-label {
-  min-width: 120rpx;
-  font-size: 24rpx;
-  color: #666;
-}
-
-.education-value {
-  font-size: 24rpx;
-  color: #333;
-  flex: 1;
-}
-
-/* 专业信息 */
-.specialty-section {
-  padding: 20rpx 32rpx;
-}
-
-.specialty-item {
-  margin-bottom: 24rpx;
-}
-
-.specialty-label {
-  display: block;
-  font-size: 24rpx;
-  color: #666;
-  margin-bottom: 12rpx;
+  min-width: 80px;
 }
 
 .specialty-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
+  gap: 8px;
 }
 
 .specialty-tag {
-  padding: 8rpx 16rpx;
-  background: #ecf5ff;
-  color: #409eff;
-  border-radius: 8rpx;
-  font-size: 22rpx;
-  font-weight: 500;
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
 }
 
 .bio-text {
-  font-size: 24rpx;
-  color: #333;
   line-height: 1.6;
+  color: #555;
 }
 
-/* 统计信息 */
-.statistics-section {
-  padding: 20rpx 32rpx;
+.education-list, .experience-list, .certification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.education-item, .experience-item, .certification-item {
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24rpx;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
 }
 
 .stat-item {
   text-align: center;
-  padding: 24rpx;
-  background: #f8f9fa;
-  border-radius: 12rpx;
 }
 
 .stat-number {
   display: block;
-  font-size: 48rpx;
-  font-weight: 700;
-  color: #409eff;
-  margin-bottom: 8rpx;
+  font-size: 24px;
+  font-weight: bold;
+  color: #007bff;
 }
 
 .stat-label {
-  font-size: 22rpx;
+  display: block;
   color: #666;
+  font-size: 14px;
+  margin-top: 5px;
 }
 
-/* 最近活动 */
-.activity-section {
-  padding: 20rpx 32rpx;
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.service-item {
+  display: flex;
+  gap: 10px;
+}
+
+.service-item label {
+  font-weight: bold;
+  color: #666;
+  min-width: 80px;
 }
 
 .activity-list {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 15px;
 }
 
 .activity-item {
   display: flex;
   align-items: flex-start;
-  gap: 16rpx;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
 }
 
 .activity-icon {
-  width: 60rpx;
-  height: 60rpx;
-  background: #ecf5ff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
 .activity-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
 }
 
 .activity-text {
-  font-size: 24rpx;
+  margin: 0 0 5px 0;
   color: #333;
 }
 
 .activity-time {
-  font-size: 20rpx;
-  color: #999;
+  color: #666;
+  font-size: 12px;
 }
 
-/* 操作按钮 */
-.action-section {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 24rpx 32rpx;
-  background: #fff;
-  border-top: 1rpx solid #f0f0f0;
-  display: flex;
-  gap: 24rpx;
+.no-data {
+  text-align: center;
+  padding: 40px;
 }
 
-.action-button {
-  flex: 1;
-  height: 80rpx;
+.back-btn {
+  padding: 10px 20px;
+  background: #007bff;
+  color: white;
   border: none;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  font-weight: 600;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.activate-btn {
-  background: #67c23a;
-  color: #fff;
+.back-btn:hover {
+  background: #0056b3;
 }
 
-.deactivate-btn {
-  background: #e6a23c;
-  color: #fff;
-}
-
-.contact-btn {
-  background: #409eff;
-  color: #fff;
-}
-
-.action-button:active {
-  transform: scale(0.98);
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
   .counselor-header {
     flex-direction: column;
-    align-items: center;
     text-align: center;
   }
   
-  .stats-grid {
+  .contact-info {
     grid-template-columns: 1fr;
   }
   
-  .action-section {
-    flex-direction: column;
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

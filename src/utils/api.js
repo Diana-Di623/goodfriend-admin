@@ -66,8 +66,31 @@ function request(url, options = {}) {
         })
       }
       
-      // 默认按 JSON 处理
-      return response.json()
+      // 检查响应是否有内容
+      return response.text().then(text => {
+        console.log('响应文本:', text)
+        
+        // 如果响应为空，返回成功状态
+        if (!text || text.trim() === '') {
+          console.log('检测到空响应，返回成功状态')
+          return { success: true, message: '操作成功' }
+        }
+        
+        // 尝试解析为JSON
+        try {
+          const data = JSON.parse(text)
+          console.log('成功解析JSON:', data)
+          return data
+        } catch (parseError) {
+          console.log('JSON解析失败，返回文本:', text)
+          // 如果不是JSON，返回文本内容
+          return { 
+            success: true, 
+            message: text,
+            data: text 
+          }
+        }
+      })
     })
     .then(data => {
       console.log(`=== 响应数据 ===`)
