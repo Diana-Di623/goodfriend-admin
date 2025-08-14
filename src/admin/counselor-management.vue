@@ -63,7 +63,10 @@
       <div v-for="consultant in filteredConsultants" :key="consultant.id" class="consultant-card">
         <div class="consultant-header">
           <div class="consultant-basic">
-            <h3>{{ consultant.name }}</h3>
+            <h3>
+              {{ consultant.name }}
+              <span v-if="consultant.id" class="consultant-id" style="font-size:15px;color:#bbb;font-weight:400;margin-left:12px;">ID: {{ consultant.id }}</span>
+            </h3>
             <span v-if="consultant.title" class="consultant-title">{{ consultant.title }}</span>
           </div>
           <span :class="['status', consultant.status || 'active']">
@@ -73,10 +76,6 @@
         
         <div class="consultant-info">
           <div class="info-section">
-            <div class="info-item" v-if="consultant.id">
-              <label>ID：</label>
-              <span>{{ consultant.id }}</span>
-            </div>
             <div class="info-item" v-if="consultant.phone">
               <label>手机：</label>
               <span>{{ consultant.phone }}</span>
@@ -128,9 +127,7 @@
           <button @click="viewDetail(consultant)" class="detail-btn">
             查看详情
           </button>
-          <button @click="editConsultant(consultant)" class="edit-btn">
-            编辑
-          </button>
+          <!-- 编辑按钮已移除 -->
           <button 
             @click="toggleStatus(consultant)" 
             :class="getStatusButtonClass(consultant.status)"
@@ -588,11 +585,13 @@ export default {
 }
 
 .consultant-card {
-  background: white;
-  border: 1px solid #e1e5e9;
-  border-radius: 8px;
-  padding: 20px;
-  transition: all 0.3s;
+  background: #fff;
+  border: 1.5px solid #f0f1f3;
+  border-radius: 18px;
+  padding: 24px 36px 24px 36px;
+  transition: box-shadow 0.3s, border 0.3s;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  margin-bottom: 18px;
 }
 
 .consultant-card:hover {
@@ -604,7 +603,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 15px;
+  margin-bottom: 0;
 }
 
 .consultant-basic h3 {
@@ -646,7 +645,8 @@ export default {
 .info-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
+  gap: 14px;
+  margin-bottom: 0;
 }
 
 .info-section.full-width {
@@ -661,28 +661,34 @@ export default {
 
 .info-item label {
   font-weight: bold;
-  color: #555;
-  font-size: 13px;
+  color: #888;
+  font-size: 14px;
+  letter-spacing: 0.5px;
 }
 
 .info-item span {
-  color: #333;
-  font-size: 14px;
+  color: #444;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .specialty-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 14px 12px;
+  margin-top: 8px;
 }
 
 .specialty-tag {
-  background: #e3f2fd;
+  background: #eaf6ff;
   color: #1976d2;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 8px 20px;
+  border-radius: 22px;
+  font-size: 16px;
   font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  border: 1px solid #d0e6fa;
 }
 
 .introduction-text {
@@ -696,26 +702,31 @@ export default {
 
 .consultant-actions {
   display: flex;
-  gap: 10px;
-  justify-content: flex-end;
+  gap: 24px;
+  justify-content: center;
+  margin-top: 18px;
 }
 
 .consultant-actions button {
-  padding: 8px 16px;
+  padding: 12px 32px;
   border: none;
-  border-radius: 4px;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
 }
 
 .detail-btn {
   background: #6c757d;
   color: white;
+  box-shadow: 0 2px 8px rgba(108,117,125,0.08);
 }
 
 .detail-btn:hover {
   background: #5a6268;
+  transform: translateY(-2px) scale(1.04);
 }
 
 .edit-btn {
@@ -739,10 +750,28 @@ export default {
 .deactivate-btn {
   background: #dc3545;
   color: white;
+  box-shadow: 0 2px 8px rgba(220,53,69,0.08);
 }
 
 .deactivate-btn:hover {
   background: #c82333;
+  transform: translateY(-2px) scale(1.04);
+/* ID样式优化 */
+.info-item.id-item label,
+.info-item.id-item span {
+  color: #bbb !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  letter-spacing: 1px;
+}
+/* 专业领域分割线 */
+.specialty-divider {
+  width: 100%;
+  height: 1.5px;
+  background: linear-gradient(90deg,#eaf6ff 0%,#d0e6fa 100%);
+  border: none;
+  margin: 10px 0 0 0;
+}
 }
 
 @media (max-width: 768px) {

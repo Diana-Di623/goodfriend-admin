@@ -1,8 +1,8 @@
 <template>
   <div class="avatar-upload-container">
     <div class="upload-header">
-      <h2>用户头像上传</h2>
-      <p>上传用户头像图片，支持 JPG、PNG格式</p>
+      <h2>头像管理</h2>
+      <p>上传新头像，支持 JPG、PNG格式</p>
     </div>
 
     <div class="upload-form">
@@ -75,43 +75,50 @@
       <p>上传进度: {{ uploadProgress }}%</p>
     </div>
 
-    <!-- 上传结果 -->
-    <div v-if="uploadResult" class="upload-result">
-      <div v-if="uploadResult.success" class="success-message">
-        <h3>✅ 头像上传成功!</h3>
-        <p><strong>头像URL:</strong> {{ uploadResult.url }}</p>
-        <p><strong>文件ID:</strong> {{ uploadResult.fileId }}</p>
-        <div class="uploaded-avatar">
-          <img :src="uploadResult.url" alt="已上传的头像" class="result-avatar" />
+    <!-- 用户头像库 -->
+    <div class="user-avatar-library">
+      <h3>用户头像库</h3>
+      <div v-if="userAvatars.length > 0" class="avatar-list">
+        <div 
+          v-for="avatar in userAvatars" 
+          :key="'user-lib-' + avatar.id" 
+          :class="['avatar-item', { 
+            selected: selectedAvatarId === avatar.id,
+            disabled: avatar.valid === false
+          }]"
+          @click="showDeleteMenu(avatar, $event)"
+        >
+          <img :src="getAvatarUrl(avatar.filename)" :alt="avatar.description || '用户头像'" />
+          <div class="avatar-info">
+            <p class="avatar-name">{{ avatar.filename }}</p>
+            <p class="avatar-date">{{ formatDate(avatar.createdAt) }}</p>
+            <p v-if="avatar.valid === false" class="avatar-status disabled">已失效</p>
+          </div>
         </div>
       </div>
-      <div v-else class="error-message">
-        <h3>❌ 头像上传失败</h3>
-        <p>{{ uploadResult.error }}</p>
+      <div v-else class="no-avatars">
+        暂无用户头像
       </div>
     </div>
 
-    <!-- 上传历史 -->
-    <div class="upload-history">
-      <h3>最近上传的头像</h3>
-      <div v-if="uploadHistory.length === 0" class="no-history">
-        暂无头像上传记录
+    <!-- 删除确认菜单 -->
+    <div v-if="deleteMenu.visible" class="delete-menu" :style="{ left: deleteMenu.x + 'px', top: deleteMenu.y + 'px' }">
+      <div class="delete-menu-item" @click="toggleAvatarStatus">
+        <span class="status-icon">{{ deleteMenu.avatar && deleteMenu.avatar.valid === false ? '✅' : '❌' }}</span>
+        {{ deleteMenu.avatar && deleteMenu.avatar.valid === false ? '恢复头像' : '失效头像' }}
       </div>
-      <div v-else class="history-list">
-        <div v-for="(item, index) in uploadHistory" :key="index" class="history-item">
-          <div class="history-avatar">
-            <img :src="item.url" alt="历史头像" class="history-avatar-img" />
-          </div>
-          <div class="history-info">
-            <p><strong>{{ item.filename }}</strong></p>
-            <p class="upload-time">{{ formatTime(item.uploadTime) }}</p>
-          </div>
-          <div class="history-actions">
-            <button @click="copyUrl(item.url)" class="btn-small">复制链接</button>
-          </div>
-        </div>
+      <div class="delete-menu-item" @click="confirmDeleteAvatar">
+        <span class="delete-icon">🗑️</span>
+        删除头像
+      </div>
+      <div class="delete-menu-item cancel" @click="hideDeleteMenu">
+        <span class="cancel-icon">❌</span>
+        取消
       </div>
     </div>
+
+    <!-- 点击遮罩层关闭菜单 -->
+    <div v-if="deleteMenu.visible" class="delete-overlay" @click="hideDeleteMenu"></div>
   </div>
 </template>
 
@@ -131,12 +138,20 @@ export default {
       uploading: false,
       uploadProgress: 0,
       uploadResult: null,
-      uploadHistory: []
+      // 用户头像库
+      userAvatars: [],
+      // 删除菜单状态
+      deleteMenu: {
+        visible: false,
+        x: 0,
+        y: 0,
+        avatar: null
+      }
     }
   },
   mounted() {
-    // 加载上传历史
-    this.loadUploadHistory()
+    // 加载用户头像库
+    this.loadUserAvatars()
   },
   methods: {
     handleFileChange(event) {
@@ -208,29 +223,18 @@ export default {
         clearInterval(progressInterval)
         this.uploadProgress = 100
 
-        // 处理上传结果
-        this.uploadResult = {
-          success: true,
-          url: result.url || result,
-          fileId: result.fileId || 'N/A'
-        }
-
-        // 添加到历史记录
-        this.addToHistory({
-          filename: this.uploadForm.filename,
-          url: this.uploadResult.url,
-          uploadTime: new Date()
-        })
-
-        // 重置表单
+        // 上传成功后重置表单并刷新页面
         this.resetForm()
+        
+        // 显示成功提示
+        alert('头像上传成功!')
+        
+        // 自动刷新页面
+        window.location.reload()
 
       } catch (error) {
         console.error('上传失败:', error)
-        this.uploadResult = {
-          success: false,
-          error: error.message || '上传失败，请重试'
-        }
+        alert('上传失败: ' + (error.message || '请重试'))
       } finally {
         this.uploading = false
       }
@@ -257,41 +261,145 @@ export default {
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     },
 
-    formatTime(date) {
-      return new Date(date).toLocaleString('zh-CN')
+    // 加载用户头像库
+    async loadUserAvatars() {
+      try {
+        console.log('🔄 加载用户头像库...')
+        
+        // 从API加载头像数据
+        const response = await adminAPI.getStaticFiles()
+        console.log('📥 头像数据响应：', response)
+        
+        // 使用新的数据结构
+        if (response && response.userAvatars) {
+          this.userAvatars = response.userAvatars
+        } else {
+          console.log('暂无用户头像')
+          this.userAvatars = []
+        }
+        
+      } catch (error) {
+        console.error('❌ 加载用户头像失败：', error)
+        this.userAvatars = []
+      }
     },
 
-    copyUrl(url) {
-      navigator.clipboard.writeText(url).then(() => {
-        alert('链接已复制到剪贴板')
-      }).catch(() => {
-        // 降级方案
-        const textArea = document.createElement('textarea')
-        textArea.value = url
-        document.body.appendChild(textArea)
-        textArea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textArea)
-        alert('链接已复制到剪贴板')
+    // 获取头像URL
+    getAvatarUrl(avatar) {
+      // 如果avatar有url属性，直接使用
+      if (avatar && avatar.url) {
+        return avatar.url
+      }
+      
+      // 兼容旧格式：如果传入的是filename字符串
+      if (typeof avatar === 'string') {
+        return `http://127.0.0.1:8080/static/user/avatars/${avatar}`
+      }
+      
+      // 如果avatar对象有filename，构建URL
+      if (avatar && avatar.filename) {
+        return `http://127.0.0.1:8080/static/user/avatars/${avatar.filename}`
+      }
+      
+      // 默认头像
+      return '/logo.png'
+    },
+
+    // 选择头像
+    selectAvatar(avatar) {
+      console.log('✅ 已选择头像：', avatar)
+      
+      // 触发事件告诉父组件选择的头像
+      this.$emit('avatar-selected', {
+        url: avatar.url || this.getAvatarUrl(avatar),
+        filename: avatar.filename,
+        description: avatar.description
       })
+      
+      alert(`已选择头像：${avatar.filename}`)
     },
 
-    loadUploadHistory() {
-      // 从 localStorage 加载头像上传历史记录
-      const history = localStorage.getItem('avatarUploadHistory')
-      if (history) {
-        this.uploadHistory = JSON.parse(history)
+    // 显示删除菜单
+    showDeleteMenu(avatar, event) {
+      this.deleteMenu = {
+        visible: true,
+        x: event.clientX,
+        y: event.clientY,
+        avatar: avatar
       }
     },
 
-    addToHistory(item) {
-      this.uploadHistory.unshift(item)
-      // 只保留最近 10 条头像记录
-      if (this.uploadHistory.length > 10) {
-        this.uploadHistory = this.uploadHistory.slice(0, 10)
+    // 隐藏删除菜单
+    hideDeleteMenu() {
+      this.deleteMenu.visible = false
+      this.deleteMenu.avatar = null
+    },
+
+    // 确认删除头像
+    async confirmDeleteAvatar() {
+      if (!this.deleteMenu.avatar) return
+      
+      try {
+        console.log('🗑️ 删除头像：', this.deleteMenu.avatar)
+        
+        // 调用删除API
+        await adminAPI.deleteStaticFile(this.deleteMenu.avatar.id)
+        
+        // 从列表中移除
+        this.userAvatars = this.userAvatars.filter(avatar => avatar.id !== this.deleteMenu.avatar.id)
+        
+        // 隐藏菜单
+        this.hideDeleteMenu()
+        
+        alert('头像删除成功')
+        
+      } catch (error) {
+        console.error('❌ 删除头像失败：', error)
+        alert('删除头像失败：' + error.message)
+        this.hideDeleteMenu()
       }
-      // 保存到 localStorage
-      localStorage.setItem('avatarUploadHistory', JSON.stringify(this.uploadHistory))
+    },
+
+    // 切换头像状态（失效/恢复）
+    async toggleAvatarStatus() {
+      if (!this.deleteMenu.avatar) return
+      
+      try {
+        const currentValid = this.deleteMenu.avatar.valid !== false // 默认为true，除非明确为false
+        const newValid = !currentValid
+        
+        console.log('🔄 切换头像状态：', this.deleteMenu.avatar)
+        console.log('当前状态:', currentValid, '新状态:', newValid)
+        
+        // 调用状态更新API
+        await adminAPI.updateStaticFileStatus(this.deleteMenu.avatar, newValid)
+        
+        // 更新本地状态
+        const avatarIndex = this.userAvatars.findIndex(avatar => avatar.id === this.deleteMenu.avatar.id)
+        if (avatarIndex !== -1) {
+          this.userAvatars[avatarIndex].valid = newValid
+        }
+        
+        // 隐藏菜单
+        this.hideDeleteMenu()
+        
+        alert(newValid ? '头像已恢复' : '头像已失效')
+        
+      } catch (error) {
+        console.error('❌ 切换头像状态失败：', error)
+        alert('操作失败：' + error.message)
+        this.hideDeleteMenu()
+      }
+    },
+
+    // 格式化日期
+    formatDate(dateString) {
+      if (!dateString) return ''
+      try {
+        return new Date(dateString).toLocaleDateString('zh-CN')
+      } catch (error) {
+        return dateString
+      }
     }
   }
 }
@@ -299,9 +407,12 @@ export default {
 
 <style scoped>
 .avatar-upload-container {
-  max-width: 800px;
+  max-width: 1400px;
+  width: 100%;
+  min-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 40px 60px;
+  box-sizing: border-box;
 }
 
 .upload-header {
@@ -503,69 +614,145 @@ export default {
   color: #721c24;
 }
 
-.upload-history {
-  background: #f9f9f9;
-  border-radius: 8px;
-  padding: 20px;
+/* 用户头像库样式 */
+.user-avatar-library {
+  margin-top: 48px;
+  padding: 64px 120px 24px 0px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1.5px solid #e9ecef;
 }
 
-.upload-history h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
+.user-avatar-library h3 {
   color: #333;
+  margin-bottom: 20px;
+  font-size: 18px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
 }
 
-.no-history {
+.user-avatar-library .avatar-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 56px 80px;
+  justify-items: center;
+}
+
+.user-avatar-library .avatar-item {
+  background: white;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.user-avatar-library .avatar-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #007bff;
+}
+
+.user-avatar-library .avatar-item.selected {
+  border-color: #007bff;
+  background: #e3f2fd;
+}
+
+.user-avatar-library .avatar-item img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+.user-avatar-library .avatar-info {
+  font-size: 12px;
+}
+
+.user-avatar-library .avatar-name {
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.user-avatar-library .avatar-date {
+  color: #666;
+  margin: 0;
+}
+
+.user-avatar-library .no-avatars {
   text-align: center;
   color: #666;
+  padding: 40px;
   font-style: italic;
 }
 
-.history-list {
-  max-height: 400px;
-  overflow-y: auto;
+/* 删除菜单样式 */
+.delete-menu {
+  position: fixed;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 120px;
 }
 
-.history-item {
+.delete-menu-item {
+  padding: 12px 16px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  padding: 15px;
-  background: white;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  border: 1px solid #e9ecef;
-  gap: 15px;
-}
-
-/* 历史记录中的头像样式 */
-.history-avatar {
-  flex-shrink: 0;
-}
-
-.history-avatar-img {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #ddd;
-}
-
-.history-info {
-  flex-grow: 1;
-}
-
-.history-info p {
-  margin: 2px 0;
+  gap: 8px;
   font-size: 14px;
+  transition: background-color 0.2s;
 }
 
-.upload-time {
-  color: #666;
-  font-size: 12px !important;
+.delete-menu-item:hover {
+  background: #f5f5f5;
 }
 
-.history-actions {
-  flex-shrink: 0;
+.delete-menu-item:first-child {
+  color: #007bff;
+  border-radius: 8px 8px 0 0;
+}
+
+.delete-menu-item:nth-child(2) {
+  color: #dc3545;
+}
+
+.delete-menu-item.cancel {
+  color: #6c757d;
+  border-top: 1px solid #eee;
+  border-radius: 0 0 8px 8px;
+}
+
+/* 失效头像样式 */
+.user-avatar-library .avatar-item.disabled {
+  opacity: 0.5;
+  filter: grayscale(0.7);
+}
+
+.user-avatar-library .avatar-item.disabled img {
+  filter: grayscale(0.8);
+}
+
+.avatar-status.disabled {
+  color: #dc3545;
+  font-size: 11px;
+  font-weight: bold;
+  margin: 2px 0 0 0;
+}
+
+.delete-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
 }
 
 /* 响应式设计 */
