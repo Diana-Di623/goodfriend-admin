@@ -53,6 +53,16 @@ const routes = [
         component: CounselorDetail
       },
       {
+        path: 'users',
+        name: 'UserManagement',
+        component: () => import('@/admin/user-management.vue')
+      },
+      {
+        path: 'users/:id',
+        name: 'UserDetail',
+        component: () => import('@/admin/user-management.vue')
+      },
+      {
         path: 'avatar-upload',
         name: 'AvatarUpload',
         component: ImageUpload

@@ -32,6 +32,7 @@
               type="tel"
               placeholder="请输入手机号"
               pattern="^1[3-9]\d{9}$"
+              maxlength="11"
               required
               class="form-input"
             />

@@ -218,7 +218,6 @@ async function handleLogin() {
         }
       })
       
-      console.log('🔀 准备跳转到管理后台...')
       
       // 直接跳转到管理后台，无需提示和延迟
       console.log('🚀 执行路由跳转: /admin/dashboard')

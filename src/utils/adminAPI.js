@@ -1,4 +1,46 @@
-import { request } from './api.js'
+const BASE_URL = 'http://127.0.0.1:8080'
+
+function request(url, options = {}) {
+  const token = localStorage.getItem('adminToken') || ''
+  const requestConfig = {
+    method: options.method || 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : '',
+      ...options.header
+    }
+  }
+  if (options.data && requestConfig.method !== 'GET') {
+    requestConfig.body = JSON.stringify(options.data)
+  }
+
+  // 打印请求详细信息
+  console.log('=== API请求详情 ===')
+  console.log('完整URL:', BASE_URL + url)
+  console.log('请求方法:', requestConfig.method)
+  console.log('Token信息:', token ? `Bearer ${token.substring(0, 20)}...` : '无Token')
+  console.log('请求头:', JSON.stringify(requestConfig.headers, null, 2))
+  console.log('请求数据:', JSON.stringify(options.data || {}, null, 2))
+  console.log('==================')
+
+  return fetch(url, requestConfig)
+    .then(async res => {
+      const contentType = res.headers.get('content-type')
+      let data = null
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json()
+      } else {
+        data = await res.text()
+      }
+      if (!res.ok) {
+        const error = new Error(data && data.message ? data.message : res.statusText)
+        error.statusCode = res.status
+        error.networkError = true
+        throw error
+      }
+      return data
+    })
+}
 
 export const adminAPI = {
   // 删除静态文件（头像）
@@ -347,34 +389,8 @@ export const adminAPI = {
   },
 
   // 获取用户列表
-  getUsers(params = {}) {
-    console.log('=== 获取用户列表 ===')
-    const queryParams = new URLSearchParams()
-    
-    if (params.status) {
-      queryParams.append('status', params.status)
-    }
-    if (params.keyword) {
-      queryParams.append('keyword', params.keyword)
-    }
-    if (params.page) {
-      queryParams.append('page', params.page)
-    }
-    if (params.size) {
-      queryParams.append('size', params.size)
-    }
-    if (params.registerStartDate) {
-      queryParams.append('registerStartDate', params.registerStartDate)
-    }
-    if (params.registerEndDate) {
-      queryParams.append('registerEndDate', params.registerEndDate)
-    }
-    
-    const url = `/api/admin/users${queryParams.toString() ? '?' + queryParams.toString() : ''}`
-    console.log('请求URL:', url)
-    console.log('请求参数:', params)
-    
-    return request(url, {
+  getAllUsers() {
+    return request('/api/admin/users', {
       method: 'GET'
     })
   },
@@ -384,7 +400,7 @@ export const adminAPI = {
     console.log('=== 获取用户详情 ===')
     console.log('用户ID:', userId)
     
-    return request(`/api/admin/users/${userId}`, {
+    return request(`/api/admin/user/${userId}`, {
       method: 'GET'
     })
   },
@@ -429,30 +445,31 @@ export const adminAPI = {
     })
   },
 
-  // 管理员登录
   adminLogin(credentials) {
     console.log('=== 管理员登录 ===')
     console.log('登录凭据:', {
       username: credentials.username,
       password: '***hidden***'
     })
-    
+
     return request('/api/admin/login', {
       method: 'POST',
       data: credentials
     }).then(response => {
       console.log('=== 管理员登录响应处理 ===')
       console.log('原始响应:', response)
-      console.log('响应类型:', typeof response)
-      console.log('响应是否为对象:', typeof response === 'object')
-      
-      // 适配后端返回格式：{ "token": "eyJhbGciOiJIUzUxMiJ9..." }
-      if (response && response.token) {
-        console.log('检测到有效的token响应')
-        console.log('Token:', response.token)
-        return response
+      // 兼容后端返回纯字符串token
+      let token = ''
+      if (typeof response === 'string') {
+        token = response
+      } else if (response && response.token) {
+        token = response.token
       }
-      
+      if (token) {
+        // 存储token
+        localStorage.setItem('adminToken', token)
+        return { token }
+      }
       console.error('无效的管理员登录响应 - 缺少token')
       throw new Error('登录响应格式错误：缺少token')
     }).catch(error => {

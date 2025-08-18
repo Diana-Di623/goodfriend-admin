@@ -57,7 +57,7 @@
           @click="router.push('/admin/users')"
         >
           <span class="nav-icon">👥</span>
-          <span class="nav-label">用户管理</span>
+          <span class="nav-label">用户管理</span> 
         </div>
         
         <div 
@@ -94,6 +94,9 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+function goToUserDetail(id) {
+  router.push(`/admin/users/${id}`)
+}
 // 模拟数据
 const pendingCount = computed(() => {
   return 5 // 模拟有5个待处理申请
