@@ -63,6 +63,11 @@ const routes = [
         component: () => import('@/admin/user-management.vue')
       },
       {
+        path: 'appointments',
+        name: 'AppointmentManagement',
+        component: () => import('@/admin/appointment.vue')
+      },
+      {
         path: 'avatar-upload',
         name: 'AvatarUpload',
         component: ImageUpload

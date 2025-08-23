@@ -90,12 +90,9 @@ export const adminAPI = {
       }
     })
     .then(data => {
-      console.log('=== 删除静态文件响应 ===')
-      console.log(data)
       return data
     })
     .catch(error => {
-      console.error('=== 删除静态文件失败 ===')
       console.error('错误信息:', error.message)
       throw error
     })
@@ -115,7 +112,6 @@ export const adminAPI = {
       headers.Authorization = `Bearer ${token}`
     }
     
-    // 根据接口文档，valid作为query参数，body包含完整文件信息
     const url = `/api/static/${avatar.id}?valid=${valid}`
     
     return fetch(url, {
@@ -135,17 +131,6 @@ export const adminAPI = {
       console.log('状态文本:', response.statusText)
       
       if (!response.ok) {
-        // 500错误可能是后端未实现此接口，提供降级处理
-        if (response.status === 500) {
-          console.log('⚠️ 服务器500错误，可能接口未实现，使用模拟响应')
-          return { 
-            success: true, 
-            message: `${valid ? '恢复' : '失效'}操作已提交（模拟）`, 
-            valid: valid,
-            simulated: true 
-          }
-        }
-        
         const error = new Error(`HTTP ${response.status}: ${response.statusText}`)
         error.statusCode = response.status
         error.networkError = true
@@ -156,9 +141,8 @@ export const adminAPI = {
       const contentType = response.headers.get('content-type')
       console.log('响应Content-Type:', contentType)
       
-      // 如果没有内容或状态码是204，返回成功响应
-      if (response.status === 204 || response.headers.get('content-length') === '0') {
-        console.log('状态更新成功，无响应内容')
+      //  返回成功响应
+      if (response.status >=200&&response.status<300) {
         return { success: true, message: valid ? '头像已恢复' : '头像已失效', valid: valid }
       }
       
@@ -239,27 +223,6 @@ export const adminAPI = {
     }).catch(error => {
       console.log('审核API调用失败，使用模拟响应')
       console.log('错误详情:', error)
-      
-      // 如果是网络错误或404，提供模拟响应
-      if (error.networkError || error.statusCode === 404) {
-        console.log('🎭 使用模拟审核响应')
-        
-        // 模拟成功响应
-        const mockResponse = {
-          success: true,
-          message: approve ? '申请已通过审核' : '申请已被拒绝',
-          data: {
-            applicationId: applicationId,
-            status: approve ? 'APPROVED' : 'REJECTED',
-            reviewedAt: new Date().toISOString(),
-            reviewReason: rejectReason
-          }
-        }
-        
-        console.log('✅ 模拟审核响应:', mockResponse)
-        return Promise.resolve(mockResponse)
-      }
-      
       // 其他错误直接抛出
       throw error
     })
@@ -737,8 +700,85 @@ export const adminAPI = {
     .catch(error => {
       console.error('=== 获取所有咨询师信息失败 ===')
       console.error('错误详情:', error)
-      
-      // 如果是网络错误，抛出错误让调用方处理
+      throw error
+    })
+  },
+
+  // 获取所有预约信息
+  getAllAppointments(params = {}) {
+    console.log('=== 获取所有预约信息 ===')
+    const queryParams = new URLSearchParams()
+    
+    // 支持的查询参数
+    if (params.status) {
+      queryParams.append('status', params.status) // PENDING, CONFIRMED, CANCELLED, COMPLETED
+    }
+    if (params.consultantId) {
+      queryParams.append('consultantId', params.consultantId) // 咨询师ID筛选
+    }
+    if (params.userId) {
+      queryParams.append('userId', params.userId) // 用户ID筛选
+    }
+    if (params.startDate) {
+      queryParams.append('startDate', params.startDate) // 开始日期筛选
+    }
+    if (params.endDate) {
+      queryParams.append('endDate', params.endDate) // 结束日期筛选
+    }
+    if (params.page) {
+      queryParams.append('page', params.page) // 页码
+    }
+    if (params.size) {
+      queryParams.append('size', params.size) // 每页条数
+    }
+    if (params.sortBy) {
+      queryParams.append('sortBy', params.sortBy) // 排序字段：startTime, createdAt
+    }
+    if (params.sortOrder) {
+      queryParams.append('sortOrder', params.sortOrder) // 排序顺序：asc, desc
+    }
+    
+    const url = `/api/admin/appointments${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    console.log('请求URL:', url)
+    console.log('请求参数:', params)
+    
+    return request(url, {
+      method: 'GET'
+    })
+    .then(response => {
+      console.log('=== 获取所有预约信息响应 ===')
+      console.log('响应数据:', response)
+      return response
+    })
+    .catch(error => {
+      console.error('=== 获取所有预约信息失败 ===')
+      console.error('错误详情:', error)
+      throw error
+    })
+  },
+
+  // 更新预约状态
+  updateAppointmentStatus(appointmentId, status) {
+    console.log('=== 更新预约状态 ===')
+    console.log('预约ID:', appointmentId)
+    console.log('新状态:', status) // PENDING, CONFIRMED, CANCELLED, COMPLETED
+    
+    const statusData = {
+      status
+    }
+    
+    return request(`/api/admin/appointments/${appointmentId}/status`, {
+      method: 'PUT',
+      data: statusData
+    })
+    .then(response => {
+      console.log('=== 更新预约状态响应 ===')
+      console.log('响应数据:', response)
+      return response
+    })
+    .catch(error => {
+      console.error('=== 更新预约状态失败 ===')
+      console.error('错误详情:', error)
       throw error
     })
   },

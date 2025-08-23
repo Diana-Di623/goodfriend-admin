@@ -59,6 +59,15 @@
           <span class="nav-icon">👥</span>
           <span class="nav-label">用户管理</span> 
         </div>
+               
+        <div 
+          class="nav-item"
+          :class="{ active: $route.path.includes('/admin/appointments') }"
+          @click="router.push('/admin/appointments')"
+        >
+          <span class="nav-icon">📅</span>
+          <span class="nav-label">预约管理</span>
+        </div>
         
         <div 
           class="nav-item"
